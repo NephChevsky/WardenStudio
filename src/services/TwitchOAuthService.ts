@@ -6,12 +6,13 @@ export class TwitchOAuthService {
   private readonly redirectUri: string;
   private readonly scopes = ['chat:read', 'chat:edit', 'user:read:email'];
 
-  constructor(clientId: string, redirectUri: string) {
+  constructor(clientId: string, redirectUri?: string) {
     this.clientId = clientId;
-    this.redirectUri = redirectUri;
+    // Twitch requires http/https URLs, so we use localhost for both dev and production
+    this.redirectUri = redirectUri || 'http://localhost:3000';
   }
 
-  getAuthUrl(): string {
+  async getAuthUrl(): Promise<string> {
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
@@ -22,9 +23,23 @@ export class TwitchOAuthService {
     return `https://id.twitch.tv/oauth2/authorize?${params.toString()}`;
   }
 
-  parseTokenFromHash(hash: string): string | null {
-    const params = new URLSearchParams(hash.substring(1));
-    return params.get('access_token');
+  async openAuthWindow(): Promise<void> {
+    const authUrl = await this.getAuthUrl();
+    window.open(authUrl, '_blank');
+  }
+
+  parseTokenFromUrl(urlString: string): string | null {
+    try {
+      const url = new URL(urlString);
+      // Check hash fragment first (implicit flow)
+      if (url.hash) {
+        const params = new URLSearchParams(url.hash.substring(1));
+        return params.get('access_token');
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   saveToken(token: string): void {

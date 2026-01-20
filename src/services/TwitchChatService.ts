@@ -99,6 +99,7 @@ export class TwitchChatService {
       authProvider,
       channels: [channel],
       requestMembershipEvents: true,
+      isAlwaysMod: false, // This ensures proper echo behavior
     });
 
     this.chatClient.onMessage((_channel, user, text, msg) => {
@@ -148,25 +149,41 @@ export class TwitchChatService {
   async sendMessage(message: string): Promise<void> {
     if (!this.chatClient || !this.channel || !this.currentUser) return;
     
-    // Use Twurple's say method to send message
+    // Send the message to Twitch
     await this.chatClient.say(this.channel, message);
     
-    // Twitch IRC doesn't echo back your own messages, so we manually add it
-    if (this.onMessageCallback) {
+    // Manually echo the message to ensure it appears
+    // This handles cases where Twitch doesn't echo back your own messages
+    if (this.onMessageCallback && this.currentUser) {
+      // Get user's badges if they're the broadcaster
+      const badges: ChatBadge[] = [];
+      if (this.currentUser.id === this.broadcasterId) {
+        const broadcasterBadge = this.badgeCache.get('broadcaster:1');
+        if (broadcasterBadge) {
+          badges.push({
+            id: 'broadcaster',
+            version: '1',
+            imageUrl: broadcasterBadge,
+            title: 'Broadcaster'
+          });
+        }
+      }
+      
       const chatMessage: ChatMessage = {
-        id: `local-${Date.now()}`,
+        id: `self-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         username: this.currentUser.name,
         displayName: this.currentUser.displayName,
         message: message,
-        messageParts: [{ type: 'text', content: message }],
+        messageParts: parseMessageWithEmotes(message, new Map()),
         timestamp: new Date(),
         color: this.currentUser.color,
-        badges: [],
+        badges: badges,
         isMod: false,
         isSubscriber: false,
         isVip: false,
-        isBroadcaster: false,
+        isBroadcaster: this.currentUser.id === this.broadcasterId,
       };
+      
       this.onMessageCallback(chatMessage);
     }
   }

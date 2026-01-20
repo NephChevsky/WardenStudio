@@ -20,8 +20,7 @@ function App() {
   const chatMessagesRef = useRef<HTMLDivElement>(null)
   const oauthServiceRef = useRef<TwitchOAuthService>(
     new TwitchOAuthService(
-      import.meta.env.VITE_TWITCH_CLIENT_ID || '',
-      window.location.origin + '/callback'
+      import.meta.env.VITE_TWITCH_CLIENT_ID || ''
     )
   )
 
@@ -43,6 +42,30 @@ function App() {
     };
     
     validateAuth();
+
+    // Listen for OAuth callback from Electron
+    const handleOAuthCallback = async (_event: any, urlString: string) => {
+      console.log('OAuth callback received:', urlString);
+      try {
+        const token = oauthServiceRef.current.parseTokenFromUrl(urlString);
+        console.log('Token parsed:', token ? 'yes' : 'no');
+        
+        if (token) {
+          oauthServiceRef.current.saveToken(token);
+          console.log('Token saved, validating...');
+          await validateAuth();
+        } else {
+          console.error('No token found in URL:', urlString);
+        }
+      } catch (err) {
+        console.error('Error handling OAuth callback:', err);
+      }
+    };
+
+    // Check if window.ipcRenderer exists (Electron environment)
+    if (window.ipcRenderer) {
+      window.ipcRenderer.on('oauth-callback', handleOAuthCallback);
+    }
 
     // Load saved messages from localStorage
     const savedMessages = localStorage.getItem('chatMessages')
@@ -76,6 +99,13 @@ function App() {
         console.error('Failed to load read message IDs:', err)
       }
     }
+
+    // Cleanup
+    return () => {
+      if (window.ipcRenderer) {
+        window.ipcRenderer.off('oauth-callback', handleOAuthCallback);
+      }
+    };
   }, [])
 
   useLayoutEffect(() => {
@@ -124,8 +154,22 @@ function App() {
 
     const service = chatServiceRef.current
     
+    // Only register the message handler once
     service.onMessage((message) => {
-      setMessages((prev) => [...prev, message])
+      setMessages((prev) => {
+        // Prevent duplicate messages by checking ID or content+user+time
+        const isDuplicate = prev.some(m => 
+          m.id === message.id || 
+          (m.username === message.username && 
+           m.message === message.message && 
+           Math.abs(m.timestamp.getTime() - message.timestamp.getTime()) < 2000)
+        );
+        
+        if (isDuplicate) {
+          return prev;
+        }
+        return [...prev, message];
+      })
     })
 
     // Auto-connect using OAuth token to the authenticated user's channel
@@ -151,8 +195,7 @@ function App() {
   }, [isAuthenticated, authenticatedUser])
 
   const handleLogin = () => {
-    const authUrl = oauthServiceRef.current.getAuthUrl()
-    window.location.href = authUrl
+    oauthServiceRef.current.openAuthWindow()
   }
 
   const handleLogout = () => {
@@ -310,7 +353,7 @@ function App() {
             disabled={!isConnected}
           />
           <button type="submit" className="chat-send-button" disabled={!isConnected || !messageInput.trim()}>
-            Chat
+            Send
           </button>
         </form>
       </div>

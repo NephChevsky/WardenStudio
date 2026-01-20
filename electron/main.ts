@@ -1,6 +1,7 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createServer } from 'node:http'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,8 +18,69 @@ process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
 let win: BrowserWindow | null
+let oauthServer: any = null
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+
+// Create a local HTTP server for OAuth callback
+function createOAuthServer() {
+  oauthServer = createServer((req, res) => {
+    // Add CORS headers for any requests
+    res.writeHead(200, { 
+      'Content-Type': 'text/html',
+      'Access-Control-Allow-Origin': '*',
+    })
+    
+    // Check if this is a token submission
+    const url = new URL(req.url!, 'http://localhost:3000')
+    const token = url.searchParams.get('token')
+    
+    if (token) {
+      // This is the token callback from the JavaScript
+      res.end('OK')
+      
+      if (win) {
+        const urlWithHash = `http://localhost:3000#access_token=${token}`
+        console.log('Received OAuth token, sending to renderer')
+        win.webContents.send('oauth-callback', urlWithHash)
+        
+        if (win.isMinimized()) win.restore()
+        win.focus()
+      }
+    } else {
+      // This is the initial OAuth redirect - serve the callback page
+      res.end(
+        '<!DOCTYPE html>' +
+        '<html>' +
+        '<head><title>Authentication</title></head>' +
+        '<body style="font-family: system-ui; text-align: center; padding: 50px;">' +
+        '<h1>✓ Authentication Successful</h1>' +
+        '<p>Processing authentication...</p>' +
+        '<script>' +
+        'console.log("Hash:", window.location.hash);' +
+        'if (window.location.hash) {' +
+        '  var token = new URLSearchParams(window.location.hash.substring(1)).get("access_token");' +
+        '  console.log("Token:", token);' +
+        '  if (token) {' +
+        '    fetch("http://localhost:3000?token=" + encodeURIComponent(token))' +
+        '      .then(() => {' +
+        '        console.log("Sent to app");' +
+        '        document.body.innerHTML = "<h1>✓ Success!</h1><p>You can close this window.</p>";' +
+        '      })' +
+        '      .catch(err => console.error("Failed to send:", err));' +
+        '  }' +
+        '}' +
+        '</script>' +
+        '</body>' +
+        '</html>'
+      )
+    }
+  })
+  
+  oauthServer.listen(3000, 'localhost', () => {
+    console.log('OAuth callback server listening on http://localhost:3000')
+  })
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -28,7 +90,7 @@ function createWindow() {
     title: 'Warden Studio',
     icon: path.join(process.env.VITE_PUBLIC!, 'icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -37,6 +99,12 @@ function createWindow() {
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
+  })
+
+  // Open external links in the default browser
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -64,6 +132,10 @@ function createWindow() {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    // Close OAuth server
+    if (oauthServer) {
+      oauthServer.close()
+    }
     app.quit()
     win = null
   }
@@ -77,4 +149,23 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
+// Handle OAuth callback
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, _commandLine) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+
+  app.whenReady().then(() => {
+    createOAuthServer()
+    createWindow()
+  })
+}
+
