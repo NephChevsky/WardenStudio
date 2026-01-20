@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [readMessageIds, setReadMessageIds] = useState<Set<string>>(new Set())
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false)
+  const [authenticatedUser, setAuthenticatedUser] = useState<{ name: string } | null>(null)
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatMessagesRef = useRef<HTMLDivElement>(null)
@@ -31,9 +32,11 @@ function App() {
         const user = await oauthServiceRef.current.validateToken();
         if (user) {
           setIsAuthenticated(true);
+          setAuthenticatedUser({ name: user.name });
         } else {
           // Token is invalid, clear it
           setIsAuthenticated(false);
+          setAuthenticatedUser(null);
         }
       }
       setIsLoading(false);
@@ -117,7 +120,7 @@ function App() {
   }, [isAuthenticated])
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || !authenticatedUser) return
 
     const service = chatServiceRef.current
     
@@ -125,8 +128,8 @@ function App() {
       setMessages((prev) => [...prev, message])
     })
 
-    // Auto-connect using OAuth token
-    const channel = import.meta.env.VITE_TWITCH_CHANNEL
+    // Auto-connect using OAuth token to the authenticated user's channel
+    const channel = authenticatedUser.name
     const accessToken = oauthServiceRef.current.getToken()
     const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
 
@@ -138,15 +141,14 @@ function App() {
           setError('Failed to connect to Twitch chat. Try logging in again.')
           oauthServiceRef.current.clearToken()
           setIsAuthenticated(false)
+          setAuthenticatedUser(null)
         })
-    } else {
-      setError('Missing Twitch channel in .env file')
     }
 
     return () => {
       service.disconnect()
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, authenticatedUser])
 
   const handleLogin = () => {
     const authUrl = oauthServiceRef.current.getAuthUrl()
@@ -157,6 +159,7 @@ function App() {
     oauthServiceRef.current.clearToken()
     chatServiceRef.current.disconnect()
     setIsAuthenticated(false)
+    setAuthenticatedUser(null)
     setIsConnected(false)
     setMessages([])
     setReadMessageIds(new Set())
@@ -222,8 +225,8 @@ function App() {
       <div className="chat-header">
         <div className="channel-info">
           <span className="stream-chat-label">STREAM CHAT</span>
-          {isConnected && (
-            <span className="channel-name">#{import.meta.env.VITE_TWITCH_CHANNEL}</span>
+          {isConnected && authenticatedUser && (
+            <span className="channel-name">#{authenticatedUser.name}</span>
           )}
         </div>
         <button onClick={handleLogout} className="logout-button">Logout</button>
