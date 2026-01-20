@@ -24,6 +24,14 @@ export interface ChatMessage {
   isSubscriber: boolean;
   isVip: boolean;
   isBroadcaster: boolean;
+  isFirstMessage: boolean;
+  isReturningChatter: boolean; // User returning after being away
+  isHighlighted: boolean; // Message highlighted by sender (paid feature)
+  isCheer: boolean; // Message contains bits/cheers
+  bits?: number; // Amount of bits if isCheer is true
+  isReply: boolean; // Message is a reply to another message
+  replyParentMessageId?: string; // ID of message being replied to
+  replyParentDisplayName?: string; // Display name of user being replied to
   isRead?: boolean;
 }
 
@@ -134,6 +142,14 @@ export class TwitchChatService {
           isSubscriber: msg.userInfo.isSubscriber,
           isVip: msg.userInfo.isVip,
           isBroadcaster: msg.userInfo.isBroadcaster,
+          isFirstMessage: msg.isFirst ?? false,
+          isReturningChatter: msg.isReturningChatter ?? false,
+          isHighlighted: msg.isHighlight ?? false,
+          isCheer: msg.isCheer ?? false,
+          bits: msg.bits,
+          isReply: msg.isReply ?? false,
+          replyParentMessageId: msg.parentMessageId,
+          replyParentDisplayName: msg.parentMessageUserDisplayName,
         };
         this.onMessageCallback(chatMessage);
       }
@@ -182,6 +198,11 @@ export class TwitchChatService {
         isSubscriber: false,
         isVip: false,
         isBroadcaster: this.currentUser.id === this.broadcasterId,
+        isFirstMessage: false,
+        isReturningChatter: false,
+        isHighlighted: false,
+        isCheer: false,
+        isReply: false,
       };
       
       this.onMessageCallback(chatMessage);
