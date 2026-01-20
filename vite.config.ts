@@ -16,4 +16,8 @@ export default defineConfig({
       renderer: {},
     }),
   ],
+  define: {
+    // Make environment variables available in Electron processes
+    'process.env.VITE_ENCRYPTION_KEY': JSON.stringify(process.env.VITE_ENCRYPTION_KEY),
+  },
 })

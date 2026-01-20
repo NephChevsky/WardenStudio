@@ -1,15 +1,18 @@
 import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { ApiClient } from '@twurple/api';
+import { SecureStorageService } from './SecureStorageService';
 
 export class TwitchOAuthService {
   private readonly clientId: string;
   private readonly redirectUri: string;
   private readonly scopes = ['chat:read', 'chat:edit', 'user:read:email'];
+  private readonly storage: SecureStorageService;
 
   constructor(clientId: string, redirectUri?: string) {
     this.clientId = clientId;
     // Twitch requires http/https URLs, so we use localhost for both dev and production
     this.redirectUri = redirectUri || 'http://localhost:3000';
+    this.storage = new SecureStorageService();
   }
 
   async getAuthUrl(): Promise<string> {
@@ -43,19 +46,19 @@ export class TwitchOAuthService {
   }
 
   saveToken(token: string): void {
-    localStorage.setItem('twitch_access_token', token);
+    this.storage.setItem('twitch_access_token', token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('twitch_access_token');
+    return this.storage.getItem('twitch_access_token');
   }
 
   clearToken(): void {
-    localStorage.removeItem('twitch_access_token');
+    this.storage.removeItem('twitch_access_token');
   }
 
   hasToken(): boolean {
-    return this.getToken() !== null;
+    return this.storage.hasItem('twitch_access_token');
   }
 
   /**

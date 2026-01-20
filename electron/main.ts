@@ -109,7 +109,10 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools()
+    // Only open dev tools in development
+    if (process.env.NODE_ENV !== 'production') {
+      win.webContents.openDevTools()
+    }
   } else {
     win.loadFile(path.join(process.env.DIST!, 'index.html'))
   }

@@ -4,6 +4,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { OAuthCallback } from './components/OAuthCallback.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { TwitchOAuthService } from './services/TwitchOAuthService.ts'
 
 const oauthService = new TwitchOAuthService(
@@ -12,11 +13,13 @@ const oauthService = new TwitchOAuthService(
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/callback" element={<OAuthCallback oauthService={oauthService} />} />
-      </Routes>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/callback" element={<OAuthCallback oauthService={oauthService} />} />
+        </Routes>
+      </HashRouter>
+    </ErrorBoundary>
   </StrictMode>,
 )
