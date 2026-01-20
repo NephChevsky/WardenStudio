@@ -26,6 +26,7 @@ function createWindow() {
     height: 800,
     autoHideMenuBar: true,
     title: 'Warden Studio',
+    icon: path.join(process.env.VITE_PUBLIC!, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
