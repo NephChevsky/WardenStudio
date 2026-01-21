@@ -6,6 +6,7 @@ import { getEmoteUrl } from './utils/emoteParser'
 import { migrateToSecureStorage } from './utils/storageMigration'
 import { useAuthStore } from './store/authStore'
 import { useChatStore } from './store/chatStore'
+import { UpdateNotification } from './components/UpdateNotification'
 
 function App() {
   // Zustand stores
@@ -193,6 +194,7 @@ function App() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="app">
+        <UpdateNotification />
         <div className="login-container">
           <h1>Warden Studio</h1>
           {isLoading ? (
@@ -209,6 +211,7 @@ function App() {
 
   return (
     <div className="chat-container">
+      <UpdateNotification />
       <div className="chat-header">
         <div className="channel-info">
           <span className="stream-chat-label">STREAM CHAT</span>

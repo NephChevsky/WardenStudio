@@ -4,13 +4,20 @@
   "version": "1.0.0",
   "type": "module",
   "main": "dist-electron/main.js",
+  "author": "Your Name",
+  "description": "A desktop Twitch chat client",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NephChevsky/WardenStudio.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "vite",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "electron:publish": "npm run build && electron-builder --publish always"
   },
   "build": {
     "appId": "com.wardenstudio.app",
@@ -22,23 +29,31 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "NephChevsky",
+      "repo": "WardenStudio"
+    },
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "publisherName": "Warden Studio"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "category": "public.app-category.social-networking"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "category": "Network"
     }
   },
   "dependencies": {
@@ -46,7 +61,9 @@
     "@twurple/auth": "^8.0.3",
     "@twurple/chat": "^8.0.3",
     "@twurple/eventsub-base": "^8.0.3",
+    "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",
+    "electron-updater": "^6.7.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",

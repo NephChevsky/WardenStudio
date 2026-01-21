@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'node:http'
+import { setupAutoUpdater } from './updater'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -137,6 +138,8 @@ function createWindow() {
       event.preventDefault()
     }
   })
+
+  return win
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -177,7 +180,12 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     createOAuthServer()
-    createWindow()
+    const window = createWindow()
+    
+    // Setup auto-updater
+    if (window) {
+      setupAutoUpdater(window)
+    }
   })
 }
 

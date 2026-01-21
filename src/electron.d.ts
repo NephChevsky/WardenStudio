@@ -12,11 +12,32 @@ export interface SecureStore {
   has(key: string): boolean;
 }
 
+export interface Updater {
+  checkForUpdates(): Promise<any>;
+  downloadUpdate(): Promise<boolean>;
+  installUpdate(): void;
+  getAppVersion(): Promise<string>;
+}
+
+export interface UpdateInfo {
+  version: string;
+  releaseNotes?: string;
+  releaseDate?: string;
+}
+
+export interface UpdateProgress {
+  percent: number;
+  transferred: number;
+  total: number;
+  bytesPerSecond: number;
+}
+
 declare global {
   interface Window {
     ipcRenderer?: IpcRenderer;
     electron?: {
       store: SecureStore;
+      updater: Updater;
     };
   }
 }
