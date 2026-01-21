@@ -5,8 +5,18 @@ export interface IpcRenderer {
   invoke(channel: string, ...args: any[]): Promise<any>;
 }
 
+export interface SecureStore {
+  get(key: string): string | undefined;
+  set(key: string, value: string): void;
+  delete(key: string): void;
+  has(key: string): boolean;
+}
+
 declare global {
   interface Window {
     ipcRenderer?: IpcRenderer;
+    electron?: {
+      store: SecureStore;
+    };
   }
 }

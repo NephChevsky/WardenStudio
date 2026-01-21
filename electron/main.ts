@@ -34,14 +34,15 @@ function createOAuthServer() {
     // Check if this is a token submission
     const url = new URL(req.url!, 'http://localhost:3000')
     const token = url.searchParams.get('token')
+    const state = url.searchParams.get('state')
     
-    if (token) {
+    if (token && state) {
       // This is the token callback from the JavaScript
       res.end('OK')
       
       if (win) {
-        const urlWithHash = `http://localhost:3000#access_token=${token}`
-        console.log('Received OAuth token, sending to renderer')
+        const urlWithHash = `http://localhost:3000#access_token=${token}&state=${state}`
+        console.log('Received OAuth token with state, sending to renderer')
         win.webContents.send('oauth-callback', urlWithHash)
         
         if (win.isMinimized()) win.restore()
@@ -59,15 +60,23 @@ function createOAuthServer() {
         '<script>' +
         'console.log("Hash:", window.location.hash);' +
         'if (window.location.hash) {' +
-        '  var token = new URLSearchParams(window.location.hash.substring(1)).get("access_token");' +
-        '  console.log("Token:", token);' +
-        '  if (token) {' +
-        '    fetch("http://localhost:3000?token=" + encodeURIComponent(token))' +
+        '  var params = new URLSearchParams(window.location.hash.substring(1));' +
+        '  var token = params.get("access_token");' +
+        '  var state = params.get("state");' +
+        '  console.log("Token:", token ? "present" : "missing");' +
+        '  console.log("State:", state ? "present" : "missing");' +
+        '  if (token && state) {' +
+        '    var urlParams = new URLSearchParams();' +
+        '    urlParams.set("token", token);' +
+        '    urlParams.set("state", state);' +
+        '    fetch("http://localhost:3000?" + urlParams.toString())' +
         '      .then(() => {' +
         '        console.log("Sent to app");' +
         '        document.body.innerHTML = "<h1>✓ Success!</h1><p>You can close this window.</p>";' +
         '      })' +
         '      .catch(err => console.error("Failed to send:", err));' +
+        '  } else {' +
+        '    document.body.innerHTML = "<h1>✗ Error</h1><p>Authentication failed. Missing required parameters.</p>";' +
         '  }' +
         '}' +
         '</script>' +
@@ -109,7 +118,10 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools()
+    // Only open dev tools in development
+    if (process.env.NODE_ENV !== 'production') {
+      win.webContents.openDevTools()
+    }
   } else {
     win.loadFile(path.join(process.env.DIST!, 'index.html'))
   }

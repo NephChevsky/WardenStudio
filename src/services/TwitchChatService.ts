@@ -148,8 +148,8 @@ export class TwitchChatService {
           isCheer: msg.isCheer ?? false,
           bits: msg.bits,
           isReply: msg.isReply ?? false,
-          replyParentMessageId: msg.parentMessageId,
-          replyParentDisplayName: msg.parentMessageUserDisplayName,
+          replyParentMessageId: msg.parentMessageId ?? undefined,
+          replyParentDisplayName: msg.parentMessageUserDisplayName ?? undefined,
         };
         this.onMessageCallback(chatMessage);
       }

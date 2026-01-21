@@ -1,23 +1,41 @@
 import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { ApiClient } from '@twurple/api';
+import { SecureStorageService } from './SecureStorageService';
 
 export class TwitchOAuthService {
   private readonly clientId: string;
   private readonly redirectUri: string;
   private readonly scopes = ['chat:read', 'chat:edit', 'user:read:email'];
+  private readonly storage: SecureStorageService;
+  private readonly STATE_KEY = 'oauth_state';
 
   constructor(clientId: string, redirectUri?: string) {
     this.clientId = clientId;
     // Twitch requires http/https URLs, so we use localhost for both dev and production
     this.redirectUri = redirectUri || 'http://localhost:3000';
+    this.storage = new SecureStorageService();
+  }
+
+  /**
+   * Generate a cryptographically secure random state parameter
+   */
+  private generateState(): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
   async getAuthUrl(): Promise<string> {
+    // Generate and store state parameter for CSRF protection
+    const state = this.generateState();
+    sessionStorage.setItem(this.STATE_KEY, state);
+
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
       response_type: 'token',
       scope: this.scopes.join(' '),
+      state: state,
     });
 
     return `https://id.twitch.tv/oauth2/authorize?${params.toString()}`;
@@ -34,6 +52,20 @@ export class TwitchOAuthService {
       // Check hash fragment first (implicit flow)
       if (url.hash) {
         const params = new URLSearchParams(url.hash.substring(1));
+        
+        // Validate state parameter for CSRF protection
+        const receivedState = params.get('state');
+        const storedState = sessionStorage.getItem(this.STATE_KEY);
+        
+        if (!receivedState || !storedState || receivedState !== storedState) {
+          console.error('OAuth state mismatch - possible CSRF attack');
+          sessionStorage.removeItem(this.STATE_KEY);
+          return null;
+        }
+        
+        // Clear state after successful validation
+        sessionStorage.removeItem(this.STATE_KEY);
+        
         return params.get('access_token');
       }
       return null;
@@ -43,19 +75,21 @@ export class TwitchOAuthService {
   }
 
   saveToken(token: string): void {
-    localStorage.setItem('twitch_access_token', token);
+    this.storage.setItem('twitch_access_token', token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('twitch_access_token');
+    return this.storage.getItem('twitch_access_token');
   }
 
   clearToken(): void {
-    localStorage.removeItem('twitch_access_token');
+    this.storage.removeItem('twitch_access_token');
+    // Also clear any pending OAuth state
+    sessionStorage.removeItem(this.STATE_KEY);
   }
 
   hasToken(): boolean {
-    return this.getToken() !== null;
+    return this.storage.hasItem('twitch_access_token');
   }
 
   /**

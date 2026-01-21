@@ -1,20 +1,42 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import { useEffect, useRef, useLayoutEffect } from 'react'
 import './App.css'
 import { TwitchChatService } from './services/TwitchChatService'
-import type { ChatMessage } from './services/TwitchChatService'
 import { TwitchOAuthService } from './services/TwitchOAuthService'
 import { getEmoteUrl } from './utils/emoteParser'
+import { migrateToSecureStorage } from './utils/storageMigration'
+import { useAuthStore } from './store/authStore'
+import { useChatStore } from './store/chatStore'
 
 function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [messageInput, setMessageInput] = useState('')
-  const [isConnected, setIsConnected] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [readMessageIds, setReadMessageIds] = useState<Set<string>>(new Set())
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false)
-  const [authenticatedUser, setAuthenticatedUser] = useState<{ name: string } | null>(null)
+  // Zustand stores
+  const { 
+    isAuthenticated, 
+    isLoading, 
+    authenticatedUser, 
+    error,
+    setAuthenticated, 
+    setLoading, 
+    setError,
+    logout: storeLogout 
+  } = useAuthStore();
+
+  const {
+    messages,
+    messageInput,
+    isConnected,
+    readMessageIds,
+    shouldScrollToBottom,
+    addMessage,
+    setMessageInput,
+    setConnected,
+    markAsRead,
+    markAllAsRead,
+    setShouldScrollToBottom,
+    loadFromLocalStorage,
+    clearMessages,
+  } = useChatStore();
+
+  // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatMessagesRef = useRef<HTMLDivElement>(null)
@@ -25,20 +47,24 @@ function App() {
   )
 
   useEffect(() => {
+    // Migrate localStorage to secure storage
+    migrateToSecureStorage();
+
+    // Load saved chat data
+    loadFromLocalStorage();
+
     // Check if user is already authenticated and validate token
     const validateAuth = async () => {
       if (oauthServiceRef.current.hasToken()) {
         const user = await oauthServiceRef.current.validateToken();
         if (user) {
-          setIsAuthenticated(true);
-          setAuthenticatedUser({ name: user.name });
+          setAuthenticated({ name: user.name, id: user.id, displayName: user.displayName });
         } else {
           // Token is invalid, clear it
-          setIsAuthenticated(false);
-          setAuthenticatedUser(null);
+          setAuthenticated(null);
         }
       }
-      setIsLoading(false);
+      setLoading(false);
     };
     
     validateAuth();
@@ -67,51 +93,13 @@ function App() {
       window.ipcRenderer.on('oauth-callback', handleOAuthCallback);
     }
 
-    // Load saved messages from localStorage
-    const savedMessages = localStorage.getItem('chatMessages')
-    if (savedMessages) {
-      try {
-        const parsed = JSON.parse(savedMessages)
-        // Convert timestamp strings back to Date objects and ensure badges array exists
-        const messagesWithDates = parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-          badges: msg.badges || [],
-          isMod: msg.isMod || false,
-          isSubscriber: msg.isSubscriber || false,
-          isVip: msg.isVip || false,
-          isBroadcaster: msg.isBroadcaster || false,
-          isFirstMessage: msg.isFirstMessage || false,
-          isReturningChatter: msg.isReturningChatter || false,
-          isHighlighted: msg.isHighlighted || false,
-          isCheer: msg.isCheer || false,
-          isReply: msg.isReply || false,
-        }))
-        setMessages(messagesWithDates)
-        setShouldScrollToBottom(true)
-      } catch (err) {
-        console.error('Failed to load saved messages:', err)
-      }
-    }
-
-    // Load saved read message IDs from localStorage
-    const savedReadIds = localStorage.getItem('readMessageIds')
-    if (savedReadIds) {
-      try {
-        const parsed = JSON.parse(savedReadIds)
-        setReadMessageIds(new Set(parsed))
-      } catch (err) {
-        console.error('Failed to load read message IDs:', err)
-      }
-    }
-
     // Cleanup
     return () => {
       if (window.ipcRenderer) {
         window.ipcRenderer.off('oauth-callback', handleOAuthCallback);
       }
     };
-  }, [])
+  }, [loadFromLocalStorage, setAuthenticated, setLoading])
 
   useLayoutEffect(() => {
     // Scroll to bottom when messages change (for new messages)
@@ -130,29 +118,14 @@ function App() {
         setShouldScrollToBottom(false)
       }, 100)
     }
-  }, [shouldScrollToBottom])
-
-  useEffect(() => {
-    // Save messages to localStorage (keep last 500 messages)
-    if (messages.length > 0) {
-      const messagesToSave = messages.slice(-500)
-      localStorage.setItem('chatMessages', JSON.stringify(messagesToSave))
-    }
-  }, [messages])
-
-  useEffect(() => {
-    // Save read message IDs to localStorage
-    if (readMessageIds.size > 0) {
-      localStorage.setItem('readMessageIds', JSON.stringify(Array.from(readMessageIds)))
-    }
-  }, [readMessageIds])
+  }, [shouldScrollToBottom, setShouldScrollToBottom])
 
   useEffect(() => {
     // Scroll to bottom when authenticated and messages exist
     if (isAuthenticated && messages.length > 0 && chatMessagesRef.current) {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, messages.length])
 
   useEffect(() => {
     if (!isAuthenticated || !authenticatedUser) return
@@ -161,20 +134,7 @@ function App() {
     
     // Only register the message handler once
     service.onMessage((message) => {
-      setMessages((prev) => {
-        // Prevent duplicate messages by checking ID or content+user+time
-        const isDuplicate = prev.some(m => 
-          m.id === message.id || 
-          (m.username === message.username && 
-           m.message === message.message && 
-           Math.abs(m.timestamp.getTime() - message.timestamp.getTime()) < 2000)
-        );
-        
-        if (isDuplicate) {
-          return prev;
-        }
-        return [...prev, message];
-      })
+      addMessage(message);
     })
 
     // Auto-connect using OAuth token to the authenticated user's channel
@@ -184,20 +144,19 @@ function App() {
 
     if (channel && accessToken && clientId) {
       service.connect(channel, accessToken, clientId)
-        .then(() => setIsConnected(true))
+        .then(() => setConnected(true))
         .catch((err) => {
           console.error('Failed to connect:', err)
           setError('Failed to connect to Twitch chat. Try logging in again.')
           oauthServiceRef.current.clearToken()
-          setIsAuthenticated(false)
-          setAuthenticatedUser(null)
+          setAuthenticated(null)
         })
     }
 
     return () => {
       service.disconnect()
     }
-  }, [isAuthenticated, authenticatedUser])
+  }, [isAuthenticated, authenticatedUser, addMessage, setConnected, setError, setAuthenticated])
 
   const handleLogin = () => {
     oauthServiceRef.current.openAuthWindow()
@@ -206,12 +165,9 @@ function App() {
   const handleLogout = () => {
     oauthServiceRef.current.clearToken()
     chatServiceRef.current.disconnect()
-    setIsAuthenticated(false)
-    setAuthenticatedUser(null)
-    setIsConnected(false)
-    setMessages([])
-    setReadMessageIds(new Set())
-    setError(null)
+    storeLogout()
+    setConnected(false)
+    clearMessages()
     localStorage.removeItem('chatMessages')
     localStorage.removeItem('readMessageIds')
   }
@@ -226,23 +182,6 @@ function App() {
     } catch (err) {
       console.error('Failed to send message:', err)
     }
-  }
-
-  const handleMarkAsRead = (messageId: string) => {
-    const messageIndex = messages.findIndex(msg => msg.id === messageId)
-    if (messageIndex === -1) return
-
-    const newReadIds = new Set(readMessageIds)
-    // Mark this message and all messages before it as read
-    for (let i = 0; i <= messageIndex; i++) {
-      newReadIds.add(messages[i].id)
-    }
-    setReadMessageIds(newReadIds)
-  }
-
-  const handleMarkAllAsRead = () => {
-    const newReadIds = new Set(messages.map(msg => msg.id))
-    setReadMessageIds(newReadIds)
   }
 
   const handleScrollToBottom = () => {
@@ -288,7 +227,7 @@ function App() {
             <div 
               key={msg.id} 
               className={`chat-line ${readMessageIds.has(msg.id) ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''}`}
-              onClick={() => handleMarkAsRead(msg.id)}
+              onClick={() => markAsRead(msg.id)}
               style={{ cursor: 'pointer' }}
             >
               {msg.isFirstMessage && (
@@ -374,7 +313,7 @@ function App() {
       <div className="chat-input-container">
         <div className="chat-actions">
           <button 
-            onClick={handleMarkAllAsRead} 
+            onClick={markAllAsRead} 
             className="mark-all-read-button"
             disabled={messages.length === 0 || readMessageIds.size === messages.length}
           >
