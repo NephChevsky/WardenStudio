@@ -11,9 +11,6 @@ export default defineConfig(({ mode }) => {
   const encryptionKey = env.VITE_ENCRYPTION_KEY || process.env.VITE_ENCRYPTION_KEY
   const clientId = env.VITE_TWITCH_CLIENT_ID || process.env.VITE_TWITCH_CLIENT_ID
   
-  console.log('Building with encryption key:', encryptionKey ? 'SET' : 'NOT SET')
-  console.log('Building with client ID:', clientId ? 'SET' : 'NOT SET')
-  
   return {
     plugins: [
       react(),

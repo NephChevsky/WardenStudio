@@ -4,6 +4,11 @@ import { fileURLToPath } from 'node:url'
 import { createServer } from 'node:http'
 import { setupAutoUpdater } from './updater'
 import Store from 'electron-store'
+import log from 'electron-log'
+
+// Configure logging
+log.transports.file.level = 'info'
+log.info('Application starting...')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,16 +16,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // IMPORTANT: VITE_ENCRYPTION_KEY must be set via environment variable or .env file
 // Never use a hardcoded fallback in production!
 const encryptionKey = process.env.VITE_ENCRYPTION_KEY
+log.info('Encryption key status:', encryptionKey ? 'SET' : 'NOT SET')
 if (!encryptionKey) {
-  console.error('ERROR: VITE_ENCRYPTION_KEY environment variable is not set!')
-  console.error('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VITE')))
+  log.error('ERROR: VITE_ENCRYPTION_KEY environment variable is not set!')
+  log.error('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VITE')))
   app.quit()
 }
-const store = new Store({
-  name: 'warden-studio-secure',
-  encryptionKey: encryptionKey,
-  clearInvalidConfig: true, // Clear corrupted config on startup
-})
+let store: Store
+try {
+  log.info('Initializing secure store...')
+  store = new Store({
+    name: 'warden-studio-secure',
+    encryptionKey: encryptionKey,
+    clearInvalidConfig: true, // Clear corrupted config on startup
+  })
+  log.info('Secure store initialized successfully')
+} catch (error) {
+  log.error('Failed to initialize store:', error)
+  throw error
+}
 
 // Setup IPC handlers for secure storage
 ipcMain.handle('store-get', (_event, key: string) => {
@@ -126,6 +140,7 @@ function createOAuthServer() {
 }
 
 function createWindow() {
+  log.info('Creating main window...')
   win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -227,13 +242,22 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(() => {
-    createOAuthServer()
-    const window = createWindow()
-    
-    // Setup auto-updater
-    if (window) {
-      setupAutoUpdater(window)
+    log.info('App is ready, initializing...')
+    try {
+      createOAuthServer()
+      const window = createWindow()
+      
+      // Setup auto-updater
+      if (window) {
+        setupAutoUpdater(window)
+      }
+      log.info('Application initialized successfully')
+    } catch (error) {
+      log.error('Failed to initialize application:', error)
+      throw error
     }
+  }).catch(error => {
+    log.error('App ready error:', error)
   })
 }
 
