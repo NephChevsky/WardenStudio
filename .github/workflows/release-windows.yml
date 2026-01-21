@@ -29,15 +29,6 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "version=v$version" >> $env:GITHUB_OUTPUT
       
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.package-version.outputs.version }}
-          git push origin ${{ steps.package-version.outputs.version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Build Electron app
         run: npm run build
         env:
@@ -56,3 +47,12 @@ jobs:
           name: windows-installer
           path: release/*.exe
           retention-days: 7
+                
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.package-version.outputs.version }}
+          git push origin ${{ steps.package-version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
