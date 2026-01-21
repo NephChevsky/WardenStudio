@@ -30,15 +30,36 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   shouldScrollToBottom: false,
 
   addMessage: (message) => set((state) => {
-    // Prevent duplicates
-    const isDuplicate = state.messages.some(m => 
-      m.id === message.id || 
-      (m.username === message.username && 
-       m.message === message.message && 
-       Math.abs(m.timestamp.getTime() - message.timestamp.getTime()) < 2000)
-    );
+    // Check for exact ID duplicate
+    const exactDuplicate = state.messages.find(m => m.id === message.id);
+    if (exactDuplicate) return state;
     
-    if (isDuplicate) return state;
+    // Check if this is an echoed message from the current user (replacing a self- message)
+    // This happens when Twitch echoes back the message we sent
+    const isSelfMessage = message.id.startsWith('self-');
+    if (!isSelfMessage) {
+      // Look for a recent self- message from same user with same content
+      const selfMessageIndex = state.messages.findIndex(m => 
+        m.id.startsWith('self-') &&
+        m.username === message.username &&
+        m.message === message.message &&
+        Math.abs(m.timestamp.getTime() - message.timestamp.getTime()) < 5000
+      );
+      
+      if (selfMessageIndex !== -1) {
+        // Replace the self- message with the real one from Twitch (has badges, etc.)
+        const newMessages = [...state.messages];
+        newMessages[selfMessageIndex] = message;
+        
+        // Auto-save to localStorage
+        setTimeout(() => {
+          const messagesToSave = newMessages.slice(-MAX_STORED_MESSAGES);
+          localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
+        }, 0);
+        
+        return { messages: newMessages };
+      }
+    }
 
     const newMessages = [...state.messages, message];
     
