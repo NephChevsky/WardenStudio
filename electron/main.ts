@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Initialize encrypted store in main process
 // IMPORTANT: VITE_ENCRYPTION_KEY must be set via environment variable or .env file
 // Never use a hardcoded fallback in production!
-const encryptionKey = process.env.VITE_ENCRYPTION_KEY
+const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY || process.env.VITE_ENCRYPTION_KEY
 if (!encryptionKey) {
   console.error('ERROR: VITE_ENCRYPTION_KEY environment variable is not set!')
   app.quit()
