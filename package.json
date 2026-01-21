@@ -38,8 +38,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "public/icon.png",
-      "publisherName": "Warden Studio"
+      "icon": "public/icon.png"
     },
     "mac": {
       "target": [
