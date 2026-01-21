@@ -37,15 +37,11 @@ jobs:
             exit 1
           }
       
-      - name: Build Electron app
-        run: npm run build
+      - name: Build and Publish to GitHub Releases
+        run: npm run electron:publish
         env:
           VITE_TWITCH_CLIENT_ID: ${{ secrets.VITE_TWITCH_CLIENT_ID }}
           VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY }}
-      
-      - name: Publish to GitHub Releases
-        run: npm run electron:publish
-        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload build artifacts
