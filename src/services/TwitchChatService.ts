@@ -43,6 +43,7 @@ export class TwitchChatService {
   private currentUser: { id: string; name: string; displayName: string; color?: string } | null = null;
   private badgeCache: Map<string, string> = new Map();
   private broadcasterId: string = '';
+  private userBadges: ChatBadge[] = [];
 
   async connect(channel: string, accessToken: string, clientId: string) {
     this.channel = channel;
@@ -107,7 +108,8 @@ export class TwitchChatService {
       authProvider,
       channels: [channel],
       requestMembershipEvents: true,
-      isAlwaysMod: false, // This ensures proper echo behavior
+      isAlwaysMod: true,
+      botLevel: "known"
     });
 
     this.chatClient.onMessage((_channel, user, text, msg) => {
@@ -126,6 +128,11 @@ export class TwitchChatService {
             });
           }
         });
+        
+        // Store user's own badges for use in sendMessage
+        if (this.currentUser && user === this.currentUser.name) {
+          this.userBadges = badges;
+        }
 
         const chatMessage: ChatMessage = {
           id: msg.id,
@@ -165,23 +172,28 @@ export class TwitchChatService {
   async sendMessage(message: string): Promise<void> {
     if (!this.chatClient || !this.channel || !this.currentUser) return;
     
-    // Send the message to Twitch
+    debugger;
     await this.chatClient.say(this.channel, message);
     
-    // Manually echo the message to ensure it appears
-    // This handles cases where Twitch doesn't echo back your own messages
     if (this.onMessageCallback && this.currentUser) {
-      // Get user's badges if they're the broadcaster
+      // Use captured badges from user's previous messages, or create default badges
       const badges: ChatBadge[] = [];
-      if (this.currentUser.id === this.broadcasterId) {
-        const broadcasterBadge = this.badgeCache.get('broadcaster:1');
-        if (broadcasterBadge) {
-          badges.push({
-            id: 'broadcaster',
-            version: '1',
-            imageUrl: broadcasterBadge,
-            title: 'Broadcaster'
-          });
+      
+      // If we have captured badges, use them
+      if (this.userBadges.length > 0) {
+        badges.push(...this.userBadges);
+      } else {
+        // Fallback: manually add broadcaster badge if applicable
+        if (this.currentUser.id === this.broadcasterId) {
+          const broadcasterBadge = this.badgeCache.get('broadcaster:1');
+          if (broadcasterBadge) {
+            badges.push({
+              id: 'broadcaster',
+              version: '1',
+              imageUrl: broadcasterBadge,
+              title: 'Broadcaster'
+            });
+          }
         }
       }
       
