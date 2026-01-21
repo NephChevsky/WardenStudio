@@ -6,10 +6,10 @@ export interface IpcRenderer {
 }
 
 export interface SecureStore {
-  get(key: string): string | undefined;
-  set(key: string, value: string): void;
-  delete(key: string): void;
-  has(key: string): boolean;
+  get(key: string): Promise<any>;
+  set(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+  has(key: string): Promise<boolean>;
 }
 
 export interface Updater {

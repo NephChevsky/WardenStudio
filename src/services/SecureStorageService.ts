@@ -12,36 +12,37 @@ export class SecureStorageService {
     }
   }
 
-  setItem(key: string, value: string): void {
+  async setItem(key: string, value: string): Promise<void> {
     if (this.store) {
-      this.store.set(key, value);
+      await this.store.set(key, value);
     } else {
       // Fallback to localStorage for web/dev environment
       localStorage.setItem(key, value);
     }
   }
 
-  getItem(key: string): string | null {
+  async getItem(key: string): Promise<string | null> {
     if (this.store) {
-      return this.store.get(key) ?? null;
+      const value = await this.store.get(key);
+      return value ?? null;
     } else {
       // Fallback to localStorage for web/dev environment
       return localStorage.getItem(key);
     }
   }
 
-  removeItem(key: string): void {
+  async removeItem(key: string): Promise<void> {
     if (this.store) {
-      this.store.delete(key);
+      await this.store.delete(key);
     } else {
       // Fallback to localStorage for web/dev environment
       localStorage.removeItem(key);
     }
   }
 
-  hasItem(key: string): boolean {
+  async hasItem(key: string): Promise<boolean> {
     if (this.store) {
-      return this.store.has(key);
+      return await this.store.has(key);
     } else {
       // Fallback to localStorage for web/dev environment
       return localStorage.getItem(key) !== null;

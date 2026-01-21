@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "main": "dist-electron/main.js",
-  "author": "Your Name",
+  "author": "Neph",
   "description": "A desktop Twitch chat client",
   "repository": {
     "type": "git",
@@ -17,7 +17,8 @@
     "preview": "vite preview",
     "electron:dev": "vite",
     "electron:build": "npm run build && electron-builder",
-    "electron:publish": "npm run build && electron-builder --publish always"
+    "electron:publish": "npm run build && electron-builder --publish always",
+    "security-check": "node security-check.cjs"
   },
   "build": {
     "appId": "com.wardenstudio.app",
@@ -59,7 +60,6 @@
     "@twurple/api": "^8.0.3",
     "@twurple/auth": "^8.0.3",
     "@twurple/chat": "^8.0.3",
-    "@twurple/eventsub-base": "^8.0.3",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.7.3",

@@ -13,10 +13,10 @@ export function OAuthCallback({ oauthService }: OAuthCallbackProps) {
   useEffect(() => {
     const processCallback = async () => {
       // Check for access token in URL hash (implicit flow)
-      const token = oauthService.parseTokenFromUrl(window.location.href);
+      const token = await oauthService.parseTokenFromUrl(window.location.href);
 
       if (token) {
-        oauthService.saveToken(token);
+        await oauthService.saveToken(token);
         navigate('/');
       } else {
         setError('No access token received');

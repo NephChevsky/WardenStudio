@@ -3,7 +3,6 @@ import './App.css'
 import { TwitchChatService } from './services/TwitchChatService'
 import { TwitchOAuthService } from './services/TwitchOAuthService'
 import { getEmoteUrl } from './utils/emoteParser'
-import { migrateToSecureStorage } from './utils/storageMigration'
 import { useAuthStore } from './store/authStore'
 import { useChatStore } from './store/chatStore'
 import { UpdateNotification } from './components/UpdateNotification'
@@ -48,15 +47,12 @@ function App() {
   )
 
   useEffect(() => {
-    // Migrate localStorage to secure storage
-    migrateToSecureStorage();
-
     // Load saved chat data
     loadFromLocalStorage();
 
     // Check if user is already authenticated and validate token
     const validateAuth = async () => {
-      if (oauthServiceRef.current.hasToken()) {
+      if (await oauthServiceRef.current.hasToken()) {
         const user = await oauthServiceRef.current.validateToken();
         if (user) {
           setAuthenticated({ name: user.name, id: user.id, displayName: user.displayName });
@@ -74,11 +70,11 @@ function App() {
     const handleOAuthCallback = async (_event: any, urlString: string) => {
       console.log('OAuth callback received:', urlString);
       try {
-        const token = oauthServiceRef.current.parseTokenFromUrl(urlString);
+        const token = await oauthServiceRef.current.parseTokenFromUrl(urlString);
         console.log('Token parsed:', token ? 'yes' : 'no');
         
         if (token) {
-          oauthServiceRef.current.saveToken(token);
+          await oauthServiceRef.current.saveToken(token);
           console.log('Token saved, validating...');
           await validateAuth();
         } else {
@@ -136,23 +132,25 @@ function App() {
     // Only register the message handler once
     service.onMessage((message) => {
       addMessage(message);
-    })
+    });
 
     // Auto-connect using OAuth token to the authenticated user's channel
-    const channel = authenticatedUser.name
-    const accessToken = oauthServiceRef.current.getToken()
-    const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
+    (async () => {
+      const channel = authenticatedUser.name
+      const accessToken = await oauthServiceRef.current.getToken()
+      const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
 
-    if (channel && accessToken && clientId) {
-      service.connect(channel, accessToken, clientId)
-        .then(() => setConnected(true))
-        .catch((err) => {
-          console.error('Failed to connect:', err)
-          setError('Failed to connect to Twitch chat. Try logging in again.')
-          oauthServiceRef.current.clearToken()
-          setAuthenticated(null)
-        })
-    }
+      if (channel && accessToken && clientId) {
+        service.connect(channel, accessToken, clientId)
+          .then(() => setConnected(true))
+          .catch(async (err) => {
+            console.error('Failed to connect:', err)
+            setError('Failed to connect to Twitch chat. Try logging in again.')
+            await oauthServiceRef.current.clearToken()
+            setAuthenticated(null)
+          })
+      }
+    })()
 
     return () => {
       service.disconnect()
@@ -163,8 +161,8 @@ function App() {
     oauthServiceRef.current.openAuthWindow()
   }
 
-  const handleLogout = () => {
-    oauthServiceRef.current.clearToken()
+  const handleLogout = async () => {
+    await oauthServiceRef.current.clearToken()
     chatServiceRef.current.disconnect()
     storeLogout()
     setConnected(false)

@@ -28,7 +28,7 @@ export class TwitchOAuthService {
   async getAuthUrl(): Promise<string> {
     // Generate and store state parameter for CSRF protection
     const state = this.generateState();
-    sessionStorage.setItem(this.STATE_KEY, state);
+    await this.storage.setItem(this.STATE_KEY, state);
 
     const params = new URLSearchParams({
       client_id: this.clientId,
@@ -46,7 +46,7 @@ export class TwitchOAuthService {
     window.open(authUrl, '_blank');
   }
 
-  parseTokenFromUrl(urlString: string): string | null {
+  async parseTokenFromUrl(urlString: string): Promise<string | null> {
     try {
       const url = new URL(urlString);
       // Check hash fragment first (implicit flow)
@@ -55,16 +55,18 @@ export class TwitchOAuthService {
         
         // Validate state parameter for CSRF protection
         const receivedState = params.get('state');
-        const storedState = sessionStorage.getItem(this.STATE_KEY);
+        const storedState = await this.storage.getItem(this.STATE_KEY);
         
         if (!receivedState || !storedState || receivedState !== storedState) {
           console.error('OAuth state mismatch - possible CSRF attack');
-          sessionStorage.removeItem(this.STATE_KEY);
+          console.log('Received state:', receivedState);
+          console.log('Stored state:', storedState);
+          await this.storage.removeItem(this.STATE_KEY);
           return null;
         }
         
         // Clear state after successful validation
-        sessionStorage.removeItem(this.STATE_KEY);
+        await this.storage.removeItem(this.STATE_KEY);
         
         return params.get('access_token');
       }
@@ -74,22 +76,22 @@ export class TwitchOAuthService {
     }
   }
 
-  saveToken(token: string): void {
-    this.storage.setItem('twitch_access_token', token);
+  async saveToken(token: string): Promise<void> {
+    await this.storage.setItem('twitch_access_token', token);
   }
 
-  getToken(): string | null {
-    return this.storage.getItem('twitch_access_token');
+  async getToken(): Promise<string | null> {
+    return await this.storage.getItem('twitch_access_token');
   }
 
-  clearToken(): void {
-    this.storage.removeItem('twitch_access_token');
+  async clearToken(): Promise<void> {
+    await this.storage.removeItem('twitch_access_token');
     // Also clear any pending OAuth state
-    sessionStorage.removeItem(this.STATE_KEY);
+    await this.storage.removeItem(this.STATE_KEY);
   }
 
-  hasToken(): boolean {
-    return this.storage.hasItem('twitch_access_token');
+  async hasToken(): Promise<boolean> {
+    return await this.storage.hasItem('twitch_access_token');
   }
 
   /**
@@ -97,7 +99,7 @@ export class TwitchOAuthService {
    * Returns the authenticated user if valid, null otherwise
    */
   async validateToken(): Promise<{ id: string; name: string; displayName: string } | null> {
-    const token = this.getToken();
+    const token = await this.getToken();
     if (!token) return null;
 
     try {
@@ -116,7 +118,7 @@ export class TwitchOAuthService {
       const user = await apiClient.users.getUserById(tokenInfo.userId);
       
       if (!user) {
-        this.clearToken();
+        await this.clearToken();
         return null;
       }
       
@@ -128,7 +130,7 @@ export class TwitchOAuthService {
     } catch (error) {
       // Token is invalid or expired
       console.error('Token validation failed:', error);
-      this.clearToken();
+      await this.clearToken();
       return null;
     }
   }

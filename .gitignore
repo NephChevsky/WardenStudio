@@ -13,7 +13,11 @@ dist-ssr
 dist-electron
 release
 *.local
+
+# Environment files - NEVER commit these!
 .env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*

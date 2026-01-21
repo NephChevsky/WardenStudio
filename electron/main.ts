@@ -1,10 +1,42 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'node:http'
 import { setupAutoUpdater } from './updater'
+import Store from 'electron-store'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Initialize encrypted store in main process
+// IMPORTANT: VITE_ENCRYPTION_KEY must be set via environment variable or .env file
+// Never use a hardcoded fallback in production!
+const encryptionKey = process.env.VITE_ENCRYPTION_KEY
+if (!encryptionKey) {
+  console.error('ERROR: VITE_ENCRYPTION_KEY environment variable is not set!')
+  app.quit()
+}
+const store = new Store({
+  name: 'warden-studio-secure',
+  encryptionKey: encryptionKey,
+  clearInvalidConfig: true, // Clear corrupted config on startup
+})
+
+// Setup IPC handlers for secure storage
+ipcMain.handle('store-get', (_event, key: string) => {
+  return store.get(key)
+})
+
+ipcMain.handle('store-set', (_event, key: string, value: string) => {
+  store.set(key, value)
+})
+
+ipcMain.handle('store-delete', (_event, key: string) => {
+  store.delete(key)
+})
+
+ipcMain.handle('store-has', (_event, key: string) => {
+  return store.has(key)
+})
 
 // The built directory structure
 //
@@ -104,6 +136,21 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
+  })
+
+  // Set Content Security Policy
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          // In development, allow vite dev server and inline scripts for HMR
+          VITE_DEV_SERVER_URL
+            ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss://irc-ws.chat.twitch.tv https://id.twitch.tv https://api.twitch.tv ws://localhost:*;"
+            : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: static-cdn.jtvnw.net; connect-src 'self' wss://irc-ws.chat.twitch.tv https://id.twitch.tv https://api.twitch.tv;"
+        ]
+      }
+    })
   })
 
   // Test active push message to Renderer-process.
