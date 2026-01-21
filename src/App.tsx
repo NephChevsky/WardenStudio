@@ -176,8 +176,9 @@ function App() {
     if (!messageInput.trim() || !isConnected) return
 
     try {
-      await chatServiceRef.current.sendMessage(messageInput)
+      const messageToSend = messageInput
       setMessageInput('')
+      await chatServiceRef.current.sendMessage(messageToSend)
     } catch (err) {
       console.error('Failed to send message:', err)
     }
