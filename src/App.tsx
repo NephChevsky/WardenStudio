@@ -232,38 +232,40 @@ function App() {
               onClick={() => markAsRead(msg.id)}
               style={{ cursor: 'pointer' }}
             >
-              {msg.isFirstMessage && (
-                <div className="first-time-badge">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8.5 7.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM14 14H6v-1.5c0-1.25 2-2.5 4-2.5s4 1.25 4 2.5V14z"/>
-                  </svg>
-                  <span>First time chatter</span>
-                </div>
-              )}
-              {msg.isReturningChatter && (
-                <div className="returning-chatter-badge">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 3a2 2 0 110 4 2 2 0 010-4zm3 10H7v-1.5c0-1 2-2 3-2s3 1 3 2V15z"/>
-                  </svg>
-                  <span>Returning chatter</span>
-                </div>
-              )}
-              {msg.isHighlighted && (
-                <div className="highlighted-indicator">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 2l2.5 5.5L18 8.5l-4.5 4 1 6-4.5-2.5L5 18.5l1-6L1.5 8.5l5.5-1z"/>
-                  </svg>
-                  <span>Highlighted Message</span>
-                </div>
-              )}
-              {msg.isReply && msg.replyParentDisplayName && (
-                <div className="reply-thread">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 12l-4-4 4-4v2.5c5 0 8.5 1.5 11 5-1.5-4.5-5-6.5-11-6.5V8z"/>
-                  </svg>
-                  <span>Replying to @{msg.replyParentDisplayName}</span>
-                </div>
-              )}
+              <div className="chat-line-wrapper">
+                {msg.isFirstMessage && (
+                  <div className="first-time-badge">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8.5 7.5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM14 14H6v-1.5c0-1.25 2-2.5 4-2.5s4 1.25 4 2.5V14z"/>
+                    </svg>
+                    <span>First time chatter</span>
+                  </div>
+                )}
+                {msg.isReturningChatter && (
+                  <div className="returning-chatter-badge">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 3a2 2 0 110 4 2 2 0 010-4zm3 10H7v-1.5c0-1 2-2 3-2s3 1 3 2V15z"/>
+                    </svg>
+                    <span>Returning chatter</span>
+                  </div>
+                )}
+                {msg.isHighlighted && (
+                  <div className="highlighted-indicator">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 2l2.5 5.5L18 8.5l-4.5 4 1 6-4.5-2.5L5 18.5l1-6L1.5 8.5l5.5-1z"/>
+                    </svg>
+                    <span>Highlighted Message</span>
+                  </div>
+                )}
+                {msg.isReply && msg.replyParentDisplayName && (
+                  <div className="reply-thread">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M8 12l-4-4 4-4v2.5c5 0 8.5 1.5 11 5-1.5-4.5-5-6.5-11-6.5V8z"/>
+                    </svg>
+                    <span>Replying to @{msg.replyParentDisplayName}</span>
+                  </div>
+                )}
+                <div className="chat-line-content">
               <span className="chat-timestamp">
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -306,6 +308,8 @@ function App() {
                   return <span key={index}>{part.content}</span>;
                 })}
               </span>
+                </div>
+              </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
