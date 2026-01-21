@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
               // Make environment variables available in Electron main process
               'process.env.VITE_ENCRYPTION_KEY': JSON.stringify(encryptionKey),
               'process.env.VITE_TWITCH_CLIENT_ID': JSON.stringify(clientId),
+              'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production'),
             },
             build: {
               rollupOptions: {
