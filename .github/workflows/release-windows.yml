@@ -29,6 +29,14 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "version=v$version" >> $env:GITHUB_OUTPUT
       
+      - name: Check if tag exists
+        run: |
+          git fetch --tags
+          if (git tag -l "${{ steps.package-version.outputs.version }}") {
+            Write-Error "Tag ${{ steps.package-version.outputs.version }} already exists. Please increment the version in package.json before releasing."
+            exit 1
+          }
+      
       - name: Build Electron app
         run: npm run build
         env:
