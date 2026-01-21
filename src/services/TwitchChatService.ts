@@ -172,18 +172,15 @@ export class TwitchChatService {
   async sendMessage(message: string): Promise<void> {
     if (!this.chatClient || !this.channel || !this.currentUser) return;
     
-    debugger;
     await this.chatClient.say(this.channel, message);
     
     if (this.onMessageCallback && this.currentUser) {
-      // Use captured badges from user's previous messages, or create default badges
+      
       const badges: ChatBadge[] = [];
       
-      // If we have captured badges, use them
       if (this.userBadges.length > 0) {
         badges.push(...this.userBadges);
       } else {
-        // Fallback: manually add broadcaster badge if applicable
         if (this.currentUser.id === this.broadcasterId) {
           const broadcasterBadge = this.badgeCache.get('broadcaster:1');
           if (broadcasterBadge) {
