@@ -119,7 +119,7 @@ body {
 }
 
 .chat-line {
-  padding: 0 1rem;
+  padding: 0.1rem 1rem;
   line-height: 1.5rem;
   word-wrap: break-word;
   display: flex;
@@ -158,10 +158,6 @@ body {
 .first-time-badge svg {
   width: 0.875rem;
   height: 0.875rem;
-}
-
-.chat-line {
-  margin-top: 0.5rem;
 }
 
 /* Returning Chatter */
