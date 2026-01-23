@@ -24,15 +24,6 @@ export function UserCard({
         followingSince: Date | null
     } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [showDialog, setShowDialog] = useState(false)
-    const [dialogConfig, setDialogConfig] = useState<{
-        title: string
-        message: string
-        type: 'confirm' | 'input' | 'alert'
-        inputValue?: string
-        inputLabel?: string
-        onConfirm?: (value?: string) => void
-    } | null>(null)
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -97,20 +88,6 @@ export function UserCard({
         if (!userInfo) return
         await chatService.addModerator(userInfo.id)
         onClose()
-    }
-
-    const handleDialogConfirm = () => {
-        if (dialogConfig?.type === 'input') {
-            const input = document.querySelector('.dialog-input') as HTMLInputElement
-            dialogConfig.onConfirm?.(input?.value)
-        } else if (dialogConfig?.type === 'confirm') {
-            dialogConfig.onConfirm?.()
-        }
-        setShowDialog(false)
-    }
-
-    const handleDialogCancel = () => {
-        setShowDialog(false)
     }
 
     return (
@@ -192,34 +169,6 @@ export function UserCard({
             ) : (
                 <div className="user-card-error">
                     <p>Failed to load user info</p>
-                </div>
-            )}
-
-            {showDialog && dialogConfig && (
-                <div className="dialog-overlay" onClick={handleDialogCancel}>
-                    <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-                        <h3>{dialogConfig.title}</h3>
-                        <p>{dialogConfig.message}</p>
-                        {dialogConfig.type === 'input' && (
-                            <input
-                                type="text"
-                                className="dialog-input"
-                                defaultValue={dialogConfig.inputValue}
-                                placeholder={dialogConfig.inputLabel}
-                                autoFocus
-                            />
-                        )}
-                        <div className="dialog-buttons">
-                            {dialogConfig.type !== 'alert' && (
-                                <button className="dialog-btn dialog-btn-cancel" onClick={handleDialogCancel}>
-                                    Cancel
-                                </button>
-                            )}
-                            <button className="dialog-btn dialog-btn-confirm" onClick={handleDialogConfirm}>
-                                {dialogConfig.type === 'alert' ? 'OK' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
