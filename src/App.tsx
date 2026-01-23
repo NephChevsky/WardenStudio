@@ -257,14 +257,20 @@ function App() {
                     <span>Highlighted Message</span>
                   </div>
                 )}
-                {msg.isReply && msg.replyParentDisplayName && (
-                  <div className="reply-thread">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M8 12l-4-4 4-4v2.5c5 0 8.5 1.5 11 5-1.5-4.5-5-6.5-11-6.5V8z"/>
-                    </svg>
-                    <span>Replying to @{msg.replyParentDisplayName}</span>
-                  </div>
-                )}
+                {msg.isReply && msg.replyParentDisplayName && (() => {
+                  const parentMessage = msg.replyParentMessageId 
+                    ? messages.find(m => m.id === msg.replyParentMessageId)
+                    : null;
+                  const parentText = parentMessage?.message || msg.replyParentMessage || '';
+                  return (
+                    <div className="reply-thread">
+                      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 12l-4-4 4-4v2.5c5 0 8.5 1.5 11 5-1.5-4.5-5-6.5-11-6.5V8z"/>
+                      </svg>
+                      <span className="reply-text">Replying to @{msg.replyParentDisplayName}: {parentText}</span>
+                    </div>
+                  );
+                })()}
                 <div className="chat-line-content">
               <span className="chat-timestamp">
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

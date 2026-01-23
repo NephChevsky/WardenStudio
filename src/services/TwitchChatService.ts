@@ -32,6 +32,7 @@ export interface ChatMessage {
   isReply: boolean; // Message is a reply to another message
   replyParentMessageId?: string; // ID of message being replied to
   replyParentDisplayName?: string; // Display name of user being replied to
+  replyParentMessage?: string; // Text of the message being replied to
   isRead?: boolean;
 }
 
@@ -157,6 +158,7 @@ export class TwitchChatService {
           isReply: msg.isReply ?? false,
           replyParentMessageId: msg.parentMessageId ?? undefined,
           replyParentDisplayName: msg.parentMessageUserDisplayName ?? undefined,
+          replyParentMessage: msg.parentMessageText ?? undefined,
         };
         this.onMessageCallback(chatMessage);
       }

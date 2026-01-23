@@ -230,18 +230,23 @@ body {
   align-items: center;
   gap: 0.25rem;
   padding: 0.125rem 0.375rem;
-  background: #53535f;
-  border-radius: 3px;
   font-size: 0.6875rem;
   font-weight: 500;
   color: #adadb8;
-  white-space: nowrap;
   width: fit-content;
+  max-width: 100%;
 }
 
 .reply-thread svg {
+  flex-shrink: 0;
   width: 0.75rem;
   height: 0.75rem;
+}
+
+.reply-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Cheer Amount */
