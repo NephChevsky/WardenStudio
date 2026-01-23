@@ -23,7 +23,6 @@ const URL_REGEX = /(https?:\/\/)?(www\.)?[a-zA-Z0-9][-a-zA-Z0-9@:%._\+~#=]*\.[a-
 export function parseLinks(text: string): LinkPosition[] {
   const links: LinkPosition[] = [];
   let match: RegExpExecArray | null;
-  debugger;
   // Reset regex state
   URL_REGEX.lastIndex = 0;
   
