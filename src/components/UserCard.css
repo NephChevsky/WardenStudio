@@ -132,9 +132,29 @@
   border-color: rgba(255, 165, 0, 0.4);
 }
 
+.user-card-action-btn.timeout.active {
+  background: rgba(255, 0, 0, 0.3);
+  border-color: rgba(255, 0, 0, 0.5);
+}
+
+.user-card-action-btn.timeout.active:hover {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
 .user-card-action-btn.ban:hover {
   background: rgba(255, 0, 0, 0.2);
   border-color: rgba(255, 0, 0, 0.4);
+}
+
+.user-card-action-btn.ban.active {
+  background: rgba(255, 0, 0, 0.3);
+  border-color: rgba(255, 0, 0, 0.5);
+}
+
+.user-card-action-btn.ban.active:hover {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: rgba(46, 204, 113, 0.4);
 }
 
 .user-card-action-btn.vip:hover {
@@ -142,9 +162,29 @@
   border-color: rgba(230, 126, 34, 0.4);
 }
 
+.user-card-action-btn.vip.active {
+  background: rgba(46, 204, 113, 0.3);
+  border-color: rgba(46, 204, 113, 0.5);
+}
+
+.user-card-action-btn.vip.active:hover {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 0, 0, 0.4);
+}
+
 .user-card-action-btn.mod:hover {
   background: rgba(46, 204, 113, 0.2);
   border-color: rgba(46, 204, 113, 0.4);
+}
+
+.user-card-action-btn.mod.active {
+  background: rgba(46, 204, 113, 0.3);
+  border-color: rgba(46, 204, 113, 0.5);
+}
+
+.user-card-action-btn.mod.active:hover {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 0, 0, 0.4);
 }
 
 .dialog-overlay {

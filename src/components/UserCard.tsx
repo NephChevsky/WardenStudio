@@ -165,25 +165,25 @@ export function UserCard({
                     </div>
 
                     <div className="user-card-actions">
-                        <button className="user-card-action-btn timeout" title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
+                        <button className={`user-card-action-btn timeout${userInfo?.isTimedOut ? ' active' : ''}`} title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" />
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn ban" title={userInfo?.isBanned ? "Unban User" : "Ban User"} onClick={handleBan}>
+                        <button className={`user-card-action-btn ban${userInfo?.isBanned ? ' active' : ''}`} title={userInfo?.isBanned ? "Unban User" : "Ban User"} onClick={handleBan}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z" />
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn vip" title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
+                        <button className={`user-card-action-btn vip${userInfo?.isVip ? ' active' : ''}`} title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn mod" title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
+                        <button className={`user-card-action-btn mod${userInfo?.isMod ? ' active' : ''}`} title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
                             </svg>
