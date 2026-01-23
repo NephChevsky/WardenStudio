@@ -243,6 +243,8 @@ export class TwitchChatService {
     subscriptionMonths: number
     subscriptionTier: string
     followingSince: Date | null
+    isVip: boolean
+    isMod: boolean
   } | null> {
     if (!this.apiClient || !this.broadcasterId) {
       return null;
@@ -289,6 +291,24 @@ export class TwitchChatService {
         console.log('Follow check failed for', username, ':', err);
       }
 
+      // Check VIP status
+      let isVip = false;
+      try {
+        const vips = await this.apiClient.channels.getVips(this.broadcasterId);
+        isVip = vips.data.some(vip => vip.id === user.id);
+      } catch (err) {
+        console.log('VIP check failed for', username, ':', err);
+      }
+
+      // Check mod status
+      let isMod = false;
+      try {
+        const mods = await this.apiClient.moderation.getModerators(this.broadcasterId);
+        isMod = mods.data.some(mod => mod.userId === user.id);
+      } catch (err) {
+        console.log('Mod check failed for', username, ':', err);
+      }
+
       return {
         id: user.id,
         displayName: user.displayName,
@@ -297,7 +317,9 @@ export class TwitchChatService {
         isSubscribed,
         subscriptionMonths,
         subscriptionTier,
-        followingSince
+        followingSince,
+        isVip,
+        isMod
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);
@@ -372,6 +394,20 @@ export class TwitchChatService {
     }
   }
 
+  async removeVip(id: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.channels.removeVip(this.broadcasterId, id);
+      return true;
+    } catch (err) {
+      console.error('Failed to remove VIP:', err);
+      return false;
+    }
+  }
+
   async addModerator(id: string): Promise<boolean> {
     if (!this.apiClient || !this.broadcasterId) {
       return false;
@@ -382,6 +418,20 @@ export class TwitchChatService {
       return true;
     } catch (err) {
       console.error('Failed to add moderator:', err);
+      return false;
+    }
+  }
+
+  async removeModerator(id: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.moderation.removeModerator(this.broadcasterId, id);
+      return true;
+    } catch (err) {
+      console.error('Failed to remove moderator:', err);
       return false;
     }
   }

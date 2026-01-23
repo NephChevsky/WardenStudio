@@ -22,6 +22,8 @@ export function UserCard({
         subscriptionMonths: number
         subscriptionTier: string
         followingSince: Date | null
+        isVip: boolean
+        isMod: boolean
     } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
@@ -38,7 +40,9 @@ export function UserCard({
                     isSubscribed: info.isSubscribed,
                     subscriptionMonths: info.subscriptionMonths,
                     subscriptionTier: info.subscriptionTier,
-                    followingSince: info.followingSince
+                    followingSince: info.followingSince,
+                    isVip: info.isVip,
+                    isMod: info.isMod
                 })
             }
             setIsLoading(false)
@@ -80,13 +84,21 @@ export function UserCard({
 
     const handleVip = async () => {
         if (!userInfo) return
-        await chatService.addVip(userInfo.id)
+        if (userInfo.isVip) {
+            await chatService.removeVip(userInfo.id)
+        } else {
+            await chatService.addVip(userInfo.id)
+        }
         onClose()
     }
 
     const handleMod = async () => {
         if (!userInfo) return
-        await chatService.addModerator(userInfo.id)
+        if (userInfo.isMod) {
+            await chatService.removeModerator(userInfo.id)
+        } else {
+            await chatService.addModerator(userInfo.id)
+        }
         onClose()
     }
 
@@ -153,13 +165,13 @@ export function UserCard({
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn vip" title="VIP User" onClick={handleVip}>
+                        <button className="user-card-action-btn vip" title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn mod" title="Mod User" onClick={handleMod}>
+                        <button className="user-card-action-btn mod" title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
                             </svg>
