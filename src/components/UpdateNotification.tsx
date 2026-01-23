@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
 import type { UpdateInfo, UpdateProgress } from '../electron';
-import { useAuthStore } from '../store/authStore';
-import { TwitchOAuthService } from '../services/TwitchOAuthService';
-
-const TWITCH_CLIENT_ID = import.meta.env.VITE_TWITCH_CLIENT_ID || 'uo6dggojyb8d6soh92zknwmi5ej1q2';
 
 export function UpdateNotification() {
   const [updateAvailable, setUpdateAvailable] = useState<UpdateInfo | null>(null);
@@ -12,7 +8,6 @@ export function UpdateNotification() {
   const [readyToInstall, setReadyToInstall] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const { logout } = useAuthStore();
 
   useEffect(() => {
     if (!window.ipcRenderer) return;
@@ -65,14 +60,8 @@ export function UpdateNotification() {
     }
   };
 
-  const handleInstall = async () => {
+  const handleInstall = () => {
     if (!window.electron?.updater) return;
-    
-    // Automatically log out the user before installing the update
-    const oauthService = new TwitchOAuthService(TWITCH_CLIENT_ID);
-    await oauthService.clearToken();
-    logout();
-    
     window.electron.updater.installUpdate();
   };
 
