@@ -11,6 +11,7 @@ interface ChatStore {
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
   clearMessages: () => void;
+  deleteMessage: (messageId: string) => void;
   setMessageInput: (input: string) => void;
   setConnected: (connected: boolean) => void;
   markAsRead: (messageId: string) => void;
@@ -77,6 +78,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   clearMessages: () => set({ 
     messages: [], 
     readMessageIds: new Set() 
+  }),
+
+  deleteMessage: (messageId) => set((state) => {
+    const newMessages = state.messages.map(msg => 
+      msg.id === messageId ? { ...msg, isDeleted: true } : msg
+    );
+
+    // Save to localStorage
+    setTimeout(() => {
+      const messagesToSave = newMessages.slice(-MAX_STORED_MESSAGES);
+      localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
+    }, 0);
+
+    return { messages: newMessages };
   }),
 
   setMessageInput: (input) => set({ messageInput: input }),

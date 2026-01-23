@@ -14,6 +14,7 @@ export class TwitchOAuthService {
     'moderator:read:followers',
     'moderation:read',
     'moderator:manage:banned_users',
+    'moderator:manage:chat_messages',
     'channel:manage:vips',
     'channel:manage:moderators'
   ];

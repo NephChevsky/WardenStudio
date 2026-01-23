@@ -34,6 +34,7 @@ export interface ChatMessage {
   replyParentDisplayName?: string; // Display name of user being replied to
   replyParentMessage?: string; // Text of the message being replied to
   isRead?: boolean;
+  isDeleted?: boolean; // Message has been deleted by user
 }
 
 export class TwitchChatService {
@@ -469,6 +470,20 @@ export class TwitchChatService {
       return true;
     } catch (err) {
       console.error('Failed to remove moderator:', err);
+      return false;
+    }
+  }
+
+  async deleteMessage(messageId: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.moderation.deleteChatMessages(this.broadcasterId, messageId);
+      return true;
+    } catch (err) {
+      console.error('Failed to delete message:', err);
       return false;
     }
   }

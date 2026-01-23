@@ -34,6 +34,7 @@ function App() {
     setConnected,
     markAsRead,
     markAllAsRead,
+    deleteMessage,
     setShouldScrollToBottom,
     loadFromLocalStorage,
     clearMessages,
@@ -64,6 +65,7 @@ function App() {
   const [showAutocomplete, setShowAutocomplete] = useState(false)
   const [chatters, setChatters] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string; username: string; userId: string } | null>(null)
 
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
@@ -320,6 +322,74 @@ function App() {
     setSelectedUser(username)
   }
 
+  const handleContextMenu = (e: React.MouseEvent, messageId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const message = messages.find(m => m.id === messageId)
+    if (message) {
+      setContextMenu({ 
+        x: e.clientX, 
+        y: e.clientY, 
+        messageId,
+        username: message.username,
+        userId: message.username // We'll need to get the actual user ID from the chat service
+      })
+    }
+  }
+
+  const handleDeleteMessage = async () => {
+    if (contextMenu) {
+      // Call Twitch API to delete the message
+      const success = await chatServiceRef.current.deleteMessage(contextMenu.messageId)
+      
+      // Mark as deleted locally (strikethrough)
+      deleteMessage(contextMenu.messageId)
+      
+      if (!success) {
+        console.warn('Failed to delete message via Twitch API, but marked as deleted locally')
+      }
+      
+      setContextMenu(null)
+    }
+  }
+
+  const handleTimeoutUser = async () => {
+    if (contextMenu) {
+      // Get user info to get the user ID
+      const userInfo = await chatServiceRef.current.getUserInfo(contextMenu.username)
+      if (userInfo) {
+        const success = await chatServiceRef.current.timeoutUser(userInfo.id, 600) // 10 minute timeout
+        if (!success) {
+          console.error('Failed to timeout user')
+        }
+      }
+      setContextMenu(null)
+    }
+  }
+
+  const handleBanUser = async () => {
+    if (contextMenu) {
+      // Get user info to get the user ID
+      const userInfo = await chatServiceRef.current.getUserInfo(contextMenu.username)
+      if (userInfo) {
+        const success = await chatServiceRef.current.banUser(userInfo.id)
+        if (!success) {
+          console.error('Failed to ban user')
+        }
+      }
+      setContextMenu(null)
+    }
+  }
+
+  // Close context menu on click outside
+  useEffect(() => {
+    if (contextMenu) {
+      const handleClick = () => setContextMenu(null)
+      document.addEventListener('click', handleClick)
+      return () => document.removeEventListener('click', handleClick)
+    }
+  }, [contextMenu])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     setMessageInput(newValue)
@@ -406,8 +476,13 @@ function App() {
           {messages.map((msg) => (
             <div 
               key={msg.id} 
-              className={`chat-line ${readMessageIds.has(msg.id) ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''}`}
-              onClick={() => markAsRead(msg.id)}
+              className={`chat-line ${readMessageIds.has(msg.id) ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''} ${msg.isDeleted ? 'deleted' : ''}`}
+              onClick={() => {
+                if (!contextMenu) {
+                  markAsRead(msg.id)
+                }
+              }}
+              onContextMenu={(e) => handleContextMenu(e, msg.id)}
               style={{ 
                 cursor: 'pointer',
                 ...(readMessageIds.has(msg.id) && { background: getReadMessageColorWithAlpha() })
@@ -580,6 +655,28 @@ function App() {
           </button>
         </form>
       </div>
+
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{
+            position: 'fixed',
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button className="context-menu-item" onClick={handleDeleteMessage}>
+            Delete Message
+          </button>
+          <button className="context-menu-item" onClick={handleTimeoutUser}>
+            Timeout
+          </button>
+          <button className="context-menu-item" onClick={handleBanUser}>
+            Ban
+          </button>
+        </div>
+      )}
 
       <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
