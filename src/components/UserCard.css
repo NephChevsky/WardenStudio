@@ -61,7 +61,6 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 0.5rem;
-  flex: 1;
   overflow-y: auto;
 }
 
@@ -98,6 +97,161 @@
 
 .user-card-info-item svg {
   flex-shrink: 0;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.user-card-action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-card-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.user-card-action-btn.timeout:hover {
+  background: rgba(255, 165, 0, 0.2);
+  border-color: rgba(255, 165, 0, 0.4);
+}
+
+.user-card-action-btn.ban:hover {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 0, 0, 0.4);
+}
+
+.user-card-action-btn.vip:hover {
+  background: rgba(230, 126, 34, 0.2);
+  border-color: rgba(230, 126, 34, 0.4);
+}
+
+.user-card-action-btn.mod:hover {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog-box {
+  background: #18181b;
+  border: 1px solid #2c2c35;
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 300px;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  animation: slideInDialog 0.2s ease;
+}
+
+@keyframes slideInDialog {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dialog-box h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #efeff1;
+}
+
+.dialog-box p {
+  margin: 0 0 1rem 0;
+  color: #adadb8;
+  font-size: 0.9rem;
+}
+
+.dialog-input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  background: #0e0e10;
+  border: 1px solid #2c2c35;
+  border-radius: 4px;
+  color: #efeff1;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.dialog-input:focus {
+  outline: none;
+  border-color: #9147ff;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.dialog-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.dialog-btn-cancel {
+  background: #2c2c35;
+  color: #efeff1;
+}
+
+.dialog-btn-cancel:hover {
+  background: #3a3a44;
+}
+
+.dialog-btn-confirm {
+  background: #9147ff;
+  color: #fff;
+}
+
+.dialog-btn-confirm:hover {
+  background: #a65fff;
 }
 
 .user-card-info-item span {

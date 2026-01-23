@@ -5,7 +5,17 @@ import { SecureStorageService } from './SecureStorageService';
 export class TwitchOAuthService {
   private readonly clientId: string;
   private readonly redirectUri: string;
-  private readonly scopes = ['chat:read', 'chat:edit', 'user:read:email', 'moderator:read:chatters', 'channel:read:subscriptions', 'moderator:read:followers'];
+  private readonly scopes = [
+    'chat:read', 
+    'chat:edit', 
+    'user:read:email', 
+    'moderator:read:chatters', 
+    'channel:read:subscriptions', 
+    'moderator:read:followers',
+    'moderator:manage:banned_users',
+    'channel:manage:vips',
+    'channel:manage:moderators'
+  ];
   private readonly storage: SecureStorageService;
   private readonly STATE_KEY = 'oauth_state';
 

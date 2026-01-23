@@ -305,6 +305,87 @@ export class TwitchChatService {
     }
   }
 
+  async timeoutUser(id: string, duration: number = 600, reason?: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+      console.error('Missing required data:', { 
+        hasApiClient: !!this.apiClient, 
+        broadcasterId: this.broadcasterId,
+        currentUser: this.currentUser 
+      });
+      return false;
+    }
+
+    try {
+        console.log('Attempting timeout:', {
+        broadcasterId: this.broadcasterId,
+        moderatorId: this.currentUser.id,
+        userId: id,
+        duration
+      });
+
+      await this.apiClient.moderation.banUser(
+        this.broadcasterId,
+        {
+          user: id,
+          duration,
+          reason: reason || `Timed out for ${duration} seconds`
+        }
+      );
+      return true;
+    } catch (err) {
+      console.error('Failed to timeout user:', err);
+      return false;
+    }
+  }
+
+  async banUser(id: string, reason?: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.moderation.banUser(
+        this.broadcasterId,
+        {
+          user: id,
+          reason: reason || 'Banned by moderator'
+        }
+      );
+      return true;
+    } catch (err) {
+      console.error('Failed to ban user:', err);
+      return false;
+    }
+  }
+
+  async addVip(id: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.channels.addVip(this.broadcasterId, id);
+      return true;
+    } catch (err) {
+      console.error('Failed to add VIP:', err);
+      return false;
+    }
+  }
+
+  async addModerator(id: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.moderation.addModerator(this.broadcasterId, id);
+      return true;
+    } catch (err) {
+      console.error('Failed to add moderator:', err);
+      return false;
+    }
+  }
+
   disconnect() {
     if (this.chatClient) {
       this.chatClient.quit();
