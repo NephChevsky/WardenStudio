@@ -24,6 +24,7 @@ export function UserCard({
         followingSince: Date | null
         isVip: boolean
         isMod: boolean
+        isBroadcaster: boolean
         isBanned: boolean
         isTimedOut: boolean
         timeoutExpiresAt: Date | null
@@ -46,6 +47,7 @@ export function UserCard({
                     followingSince: info.followingSince,
                     isVip: info.isVip,
                     isMod: info.isMod,
+                    isBroadcaster: info.isBroadcaster,
                     isBanned: info.isBanned,
                     isTimedOut: info.isTimedOut,
                     timeoutExpiresAt: info.timeoutExpiresAt
@@ -177,8 +179,9 @@ export function UserCard({
                         </div>
                     </div>
 
-                    <div className="user-card-actions">
-                        <button className={`user-card-action-btn timeout${userInfo?.isTimedOut ? ' active' : ''}`} title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
+                    {!userInfo.isBroadcaster && (
+                        <div className="user-card-actions">
+                            <button className={`user-card-action-btn timeout${userInfo?.isTimedOut ? ' active' : ''}`} title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" />
                             </svg>
@@ -202,6 +205,7 @@ export function UserCard({
                             </svg>
                         </button>
                     </div>
+                    )}
 
                     {(userInfo.isBanned || userInfo.isTimedOut) && (
                         <div className="user-card-status-badges">

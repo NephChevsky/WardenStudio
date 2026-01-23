@@ -648,27 +648,38 @@ function App() {
         </form>
       </div>
 
-      {contextMenu && (
-        <div
-          className="context-menu"
-          style={{
-            position: 'fixed',
-            left: `${contextMenu.x}px`,
-            top: `${contextMenu.y}px`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button className="context-menu-item" onClick={handleDeleteMessage}>
-            Delete Message
-          </button>
-          <button className="context-menu-item" onClick={handleTimeoutUser}>
-            Timeout
-          </button>
-          <button className="context-menu-item" onClick={handleBanUser}>
-            Ban
-          </button>
-        </div>
-      )}
+      {contextMenu && (() => {
+        const message = messages.find(m => m.id === contextMenu.messageId);
+        const isBroadcaster = message?.badges.some(badge => 
+          badge.title.toLowerCase().includes('broadcaster')
+        ) || false;
+        
+        return (
+          <div
+            className="context-menu"
+            style={{
+              position: 'fixed',
+              left: `${contextMenu.x}px`,
+              top: `${contextMenu.y}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="context-menu-item" onClick={handleDeleteMessage}>
+              Delete Message
+            </button>
+            {!isBroadcaster && (
+              <>
+                <button className="context-menu-item" onClick={handleTimeoutUser}>
+                  Timeout
+                </button>
+                <button className="context-menu-item" onClick={handleBanUser}>
+                  Ban
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>

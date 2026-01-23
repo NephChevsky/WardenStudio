@@ -246,6 +246,7 @@ export class TwitchChatService {
     followingSince: Date | null
     isVip: boolean
     isMod: boolean
+    isBroadcaster: boolean
     isBanned: boolean
     isTimedOut: boolean
     timeoutExpiresAt: Date | null
@@ -345,6 +346,7 @@ export class TwitchChatService {
         followingSince,
         isVip,
         isMod,
+        isBroadcaster: user.id === this.broadcasterId,
         isBanned,
         isTimedOut,
         timeoutExpiresAt
