@@ -79,6 +79,51 @@
   gap: 0.5rem;
 }
 
+.user-card-status-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.user-card-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.user-card-badge-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.user-card-badge-title {
+  font-weight: 600;
+}
+
+.user-card-badge-time {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.user-card-badge.banned {
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.4);
+  color: #ff4444;
+}
+
+.user-card-badge.timed-out {
+  background: rgba(255, 165, 0, 0.2);
+  border: 1px solid rgba(255, 165, 0, 0.4);
+  color: #ffa500;
+}
+
 .user-card-info {
   font-size: 0.8rem;
   width: 100%;

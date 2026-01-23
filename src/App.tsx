@@ -355,13 +355,9 @@ function App() {
 
   const handleTimeoutUser = async () => {
     if (contextMenu) {
-      // Get user info to get the user ID
-      const userInfo = await chatServiceRef.current.getUserInfo(contextMenu.username)
-      if (userInfo) {
-        const success = await chatServiceRef.current.timeoutUser(userInfo.id, 600) // 10 minute timeout
-        if (!success) {
-          console.error('Failed to timeout user')
-        }
+      const success = await chatServiceRef.current.timeoutUser(contextMenu.userId, 600) // 10 minute timeout
+      if (!success) {
+        console.error('Failed to timeout user')
       }
       setContextMenu(null)
     }
@@ -369,13 +365,9 @@ function App() {
 
   const handleBanUser = async () => {
     if (contextMenu) {
-      // Get user info to get the user ID
-      const userInfo = await chatServiceRef.current.getUserInfo(contextMenu.username)
-      if (userInfo) {
-        const success = await chatServiceRef.current.banUser(userInfo.id)
-        if (!success) {
-          console.error('Failed to ban user')
-        }
+      const success = await chatServiceRef.current.banUser(contextMenu.userId)
+      if (!success) {
+        console.error('Failed to ban user')
       }
       setContextMenu(null)
     }

@@ -26,6 +26,7 @@ export function UserCard({
         isMod: boolean
         isBanned: boolean
         isTimedOut: boolean
+        timeoutExpiresAt: Date | null
     } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
@@ -46,7 +47,8 @@ export function UserCard({
                     isVip: info.isVip,
                     isMod: info.isMod,
                     isBanned: info.isBanned,
-                    isTimedOut: info.isTimedOut
+                    isTimedOut: info.isTimedOut,
+                    timeoutExpiresAt: info.timeoutExpiresAt
                 })
             }
             setIsLoading(false)
@@ -60,6 +62,17 @@ export function UserCard({
             year: 'numeric',
             month: 'long',
             day: 'numeric'
+        })
+    }
+
+    const formatDateTime = (date: Date) => {
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
         })
     }
 
@@ -189,6 +202,34 @@ export function UserCard({
                             </svg>
                         </button>
                     </div>
+
+                    {(userInfo.isBanned || userInfo.isTimedOut) && (
+                        <div className="user-card-status-badges">
+                            {userInfo.isBanned && (
+                                <div className="user-card-badge banned">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z" />
+                                    </svg>
+                                    <div className="user-card-badge-content">
+                                        <span className="user-card-badge-title">Banned</span>
+                                    </div>
+                                </div>
+                            )}
+                            {userInfo.isTimedOut && (
+                                <div className="user-card-badge timed-out">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" />
+                                    </svg>
+                                    <div className="user-card-badge-content">
+                                        <span className="user-card-badge-title">Timed Out</span>
+                                        {userInfo.timeoutExpiresAt && (
+                                            <span className="user-card-badge-time">Expires: {formatDateTime(userInfo.timeoutExpiresAt)}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </>
             ) : (
                 <div className="user-card-error">

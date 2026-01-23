@@ -248,6 +248,7 @@ export class TwitchChatService {
     isMod: boolean
     isBanned: boolean
     isTimedOut: boolean
+    timeoutExpiresAt: Date | null
   } | null> {
     if (!this.apiClient || !this.broadcasterId) {
       return null;
@@ -315,6 +316,7 @@ export class TwitchChatService {
       // Check ban/timeout status
       let isBanned = false;
       let isTimedOut = false;
+      let timeoutExpiresAt: Date | null = null;
       try {
         const bans = await this.apiClient.moderation.getBannedUsers(this.broadcasterId, { userId: user.id });
         if (bans.data.length > 0) {
@@ -322,6 +324,7 @@ export class TwitchChatService {
           if (ban.expiryDate) {
             // Has expiry date means it's a timeout
             isTimedOut = ban.expiryDate > new Date();
+            timeoutExpiresAt = ban.expiryDate;
           } else {
             // No expiry date means permanent ban
             isBanned = true;
@@ -343,7 +346,8 @@ export class TwitchChatService {
         isVip,
         isMod,
         isBanned,
-        isTimedOut
+        isTimedOut,
+        timeoutExpiresAt
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);
