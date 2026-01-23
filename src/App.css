@@ -169,6 +169,7 @@ body {
   flex: 1;
   overflow-y: auto;
   background: #18181b;
+  position: relative;
 }
 
 .messages-list {

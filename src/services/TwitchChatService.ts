@@ -226,11 +226,82 @@ export class TwitchChatService {
     }
 
     try {
-      const chattersResponse = await this.apiClient.chat.getChatters(this.broadcasterId, this.currentUser?.id || this.broadcasterId);
+      const chattersResponse = await this.apiClient.chat.getChatters(this.broadcasterId);
       return chattersResponse.data.map(chatter => chatter.userDisplayName);
     } catch (err) {
       console.error('Failed to fetch chatters:', err);
       return [];
+    }
+  }
+
+  async getUserInfo(username: string): Promise<{
+    id: string
+    displayName: string
+    profileImageUrl: string
+    createdAt: Date
+    isSubscribed: boolean
+    subscriptionMonths: number
+    subscriptionTier: string
+    followingSince: Date | null
+  } | null> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return null;
+    }
+    try {
+      // Get user by username
+      const user = await this.apiClient.users.getUserByName(username);
+      if (!user) {
+        return null;
+      }
+
+      // Check subscription status
+      let isSubscribed = false;
+      let subscriptionMonths = 0;
+      let subscriptionTier = 'None';
+
+      try {
+        const subscription = await this.apiClient.subscriptions.getSubscriptionForUser(this.broadcasterId, user.id);
+        console.log('Subscription data for', username, ':', subscription);
+        if (subscription) {
+          isSubscribed = true;
+          // Get cumulative months if available
+          subscriptionMonths = subscription.cumulativeMonths || 1;
+          // Get subscription tier (1000 = Tier 1, 2000 = Tier 2, 3000 = Tier 3)
+          const tier = subscription.tier;
+          subscriptionTier = tier === '3000' ? 'Tier 3' : tier === '2000' ? 'Tier 2' : 'Tier 1';
+        }
+      } catch (err) {
+        // User is not subscribed or we don't have permission to check
+        console.log('Subscription check failed for', username, ':', err);
+        isSubscribed = false;
+        subscriptionMonths = 0;
+        subscriptionTier = 'None';
+      }
+
+      // Check follow status
+      let followingSince: Date | null = null;
+      try {
+        const follow = await this.apiClient.channels.getChannelFollowers(this.broadcasterId, user.id);
+        if (follow.data.length > 0) {
+          followingSince = follow.data[0].followDate;
+        }
+      } catch (err) {
+        console.log('Follow check failed for', username, ':', err);
+      }
+
+      return {
+        id: user.id,
+        displayName: user.displayName,
+        profileImageUrl: user.profilePictureUrl,
+        createdAt: user.creationDate,
+        isSubscribed,
+        subscriptionMonths,
+        subscriptionTier,
+        followingSince
+      };
+    } catch (err) {
+      console.error('Failed to fetch user info:', err);
+      return null;
     }
   }
 

@@ -8,6 +8,7 @@ import { useChatStore } from './store/chatStore'
 import { useSettingsStore } from './store/settingsStore'
 import { UpdateNotification } from './components/UpdateNotification'
 import { Settings } from './components/Settings'
+import { UserCard } from './components/UserCard'
 
 function App() {
   // Zustand stores
@@ -62,6 +63,7 @@ function App() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
   const [showAutocomplete, setShowAutocomplete] = useState(false)
   const [chatters, setChatters] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
 
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
@@ -313,6 +315,11 @@ function App() {
     }
   }
 
+  const handleUsernameClick = async (username: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedUser(username)
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     setMessageInput(newValue)
@@ -468,7 +475,11 @@ function App() {
                   {msg.bits}
                 </span>
               )}
-              <span className="chat-username" style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px` }}>
+              <span 
+                className="chat-username" 
+                style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px`, cursor: 'pointer' }}
+                onClick={(e) => handleUsernameClick(msg.displayName, e)}
+              >
                 {msg.displayName}
               </span>
               <span className="chat-colon" style={{ fontSize: `${fontSize}px` }}>:</span>
@@ -508,6 +519,13 @@ function App() {
           ))}
           <div ref={messagesEndRef} />
         </div>
+        {selectedUser && (
+          <UserCard
+            username={selectedUser}
+            chatService={chatServiceRef.current}
+            onClose={() => setSelectedUser(null)}
+          />
+        )}
       </div>
 
       <div className="chat-input-container">
