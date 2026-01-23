@@ -220,6 +220,20 @@ export class TwitchChatService {
     }
   }
 
+  async getChatters(): Promise<string[]> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return [];
+    }
+
+    try {
+      const chattersResponse = await this.apiClient.chat.getChatters(this.broadcasterId, this.currentUser?.id || this.broadcasterId);
+      return chattersResponse.data.map(chatter => chatter.userDisplayName);
+    } catch (err) {
+      console.error('Failed to fetch chatters:', err);
+      return [];
+    }
+  }
+
   disconnect() {
     if (this.chatClient) {
       this.chatClient.quit();

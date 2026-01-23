@@ -61,6 +61,7 @@ function App() {
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([])
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
   const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [chatters, setChatters] = useState<string[]>([])
 
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
@@ -185,6 +186,26 @@ function App() {
     }
   }, [isAuthenticated, authenticatedUser, addMessage, setConnected, setError, setAuthenticated])
 
+  // Fetch chatters list every minute
+  useEffect(() => {
+    if (!isConnected) return
+
+    const fetchChatters = async () => {
+      const chattersData = await chatServiceRef.current.getChatters()
+      setChatters(chattersData)
+    }
+
+    // Fetch immediately
+    fetchChatters()
+
+    // Set up interval to fetch every minute
+    const intervalId = setInterval(fetchChatters, 60000)
+
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [isConnected])
+
   const handleLogin = () => {
     oauthServiceRef.current.openAuthWindow()
   }
@@ -220,9 +241,17 @@ function App() {
 
   const getUniqueUsernames = (): string[] => {
     const usernamesSet = new Set<string>()
+    
+    // Add usernames from messages
     messages.forEach(msg => {
       usernamesSet.add(msg.displayName)
     })
+    
+    // Add chatters from API
+    chatters.forEach(chatter => {
+      usernamesSet.add(chatter)
+    })
+    
     return Array.from(usernamesSet).sort()
   }
 
