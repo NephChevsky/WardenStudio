@@ -344,6 +344,20 @@ function App() {
                       />
                     );
                   }
+                  if (part.type === 'link' && part.url) {
+                    return (
+                      <a
+                        key={index}
+                        href={part.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="chat-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {part.content}
+                      </a>
+                    );
+                  }
                   return <span key={index}>{part.content}</span>;
                 })}
               </span>

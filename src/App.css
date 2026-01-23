@@ -388,6 +388,21 @@ body {
   margin: -0.125rem 0.125rem;
 }
 
+.chat-link {
+  color: #a970ff;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.1s;
+}
+
+.chat-link:hover {
+  color: #bf94ff;
+}
+
+.chat-link:visited {
+  color: #9147ff;
+}
+
 .chat-input-container {
   padding: 0.5rem;
   background: #1f1f23;

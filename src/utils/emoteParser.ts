@@ -1,3 +1,5 @@
+import { parseLinks } from './linkParser';
+
 export interface EmotePosition {
   start: number;
   end: number;
@@ -55,31 +57,76 @@ export function getEmoteUrl(emoteId: string, size: '1.0' | '2.0' | '3.0' = '1.0'
 }
 
 export interface MessagePart {
-  type: 'text' | 'emote';
+  type: 'text' | 'emote' | 'link';
   content: string;
   emoteId?: string;
+  url?: string;
 }
 
 /**
- * Parse a message with emotes into parts for rendering
- * Handles Twurple's emoteOffsets (Map format) to split text and emotes
+ * Parse text parts to detect and linkify URLs
  */
-export function parseMessageWithEmotes(text: string, emoteOffsets?: string | Map<string, string[]>): MessagePart[] {
-  const emotes = parseEmotes(text, emoteOffsets);
-  if (emotes.length === 0) {
+function parseTextForLinks(text: string): MessagePart[] {
+  const links = parseLinks(text);
+  
+  if (links.length === 0) {
     return [{ type: 'text', content: text }];
   }
 
   const parts: MessagePart[] = [];
   let lastIndex = 0;
 
-  for (const emote of emotes) {
-    // Add text before emote
-    if (emote.start > lastIndex) {
+  for (const link of links) {
+    // Add text before link
+    if (link.start > lastIndex) {
       parts.push({
         type: 'text',
-        content: text.substring(lastIndex, emote.start),
+        content: text.substring(lastIndex, link.start),
       });
+    }
+
+    // Add link
+    parts.push({
+      type: 'link',
+      content: link.displayText,
+      url: link.url,
+    });
+
+    lastIndex = link.end;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      content: text.substring(lastIndex),
+    });
+  }
+
+  return parts;
+}
+
+/**
+ * Parse a message with emotes into parts for rendering
+ * Handles Twurple's emoteOffsets (Map format) to split text and emotes
+ * Also detects and linkifies URLs in text portions
+ */
+export function parseMessageWithEmotes(text: string, emoteOffsets?: string | Map<string, string[]>): MessagePart[] {
+  const emotes = parseEmotes(text, emoteOffsets);
+  if (emotes.length === 0) {
+    // No emotes, but still check for links
+    return parseTextForLinks(text);
+  }
+
+  const parts: MessagePart[] = [];
+  let lastIndex = 0;
+
+  for (const emote of emotes) {
+    // Add text before emote (and check for links in it)
+    if (emote.start > lastIndex) {
+      const textPart = text.substring(lastIndex, emote.start);
+      const textParts = parseTextForLinks(textPart);
+      parts.push(...textParts);
     }
 
     // Add emote
@@ -92,12 +139,11 @@ export function parseMessageWithEmotes(text: string, emoteOffsets?: string | Map
     lastIndex = emote.end;
   }
 
-  // Add remaining text
+  // Add remaining text (and check for links in it)
   if (lastIndex < text.length) {
-    parts.push({
-      type: 'text',
-      content: text.substring(lastIndex),
-    });
+    const textPart = text.substring(lastIndex);
+    const textParts = parseTextForLinks(textPart);
+    parts.push(...textParts);
   }
 
   return parts;
