@@ -1,0 +1,192 @@
+/* Settings Overlay */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  background: #1f1f23;
+  border-left: 1px solid #2c2c35;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #2c2c35;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #efeff1;
+}
+
+.close-settings-button {
+  padding: 0.4rem;
+  background: transparent;
+  color: #efeff1;
+  border: 1px solid #53535f;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-settings-button:hover {
+  background: #53535f;
+}
+
+.settings-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  color: #efeff1;
+}
+
+.setting-group {
+  margin-bottom: 1.5rem;
+}
+
+.setting-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #efeff1;
+  margin-bottom: 0.5rem;
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.setting-slider {
+  flex: 1;
+  height: 4px;
+  background: #3a3a3d;
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.setting-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #9147ff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.setting-slider::-webkit-slider-thumb:hover {
+  background: #a970ff;
+}
+
+.setting-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #9147ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: background 0.1s;
+}
+
+.setting-slider::-moz-range-thumb:hover {
+  background: #a970ff;
+}
+
+.setting-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #efeff1;
+  min-width: 40px;
+  text-align: right;
+}
+
+.setting-description {
+  font-size: 0.75rem;
+  color: #adadb8;
+  margin: 0;
+}
+
+/* React Colorful Styles */
+.react-colorful {
+  width: 100% !important;
+  height: 100px !important;
+}
+
+.settings-actions {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2c2c35;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.restore-defaults-button {
+  flex: 1;
+  padding: 0.75rem;
+  background: transparent;
+  color: #efeff1;
+  border: 1px solid #53535f;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.restore-defaults-button:hover {
+  background: #53535f;
+  border-color: #676773;
+}
+
+.save-settings-button {
+  flex: 1;
+  padding: 0.75rem;
+  background: #9147ff;
+  color: #efeff1;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.save-settings-button:hover {
+  background: #772ce8;
+}

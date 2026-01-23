@@ -1,11 +1,13 @@
-import { useEffect, useRef, useLayoutEffect } from 'react'
+import { useEffect, useRef, useLayoutEffect, useState } from 'react'
 import './App.css'
 import { TwitchChatService } from './services/TwitchChatService'
 import { TwitchOAuthService } from './services/TwitchOAuthService'
 import { getEmoteUrl } from './utils/emoteParser'
 import { useAuthStore } from './store/authStore'
 import { useChatStore } from './store/chatStore'
+import { useSettingsStore } from './store/settingsStore'
 import { UpdateNotification } from './components/UpdateNotification'
+import { Settings } from './components/Settings'
 
 function App() {
   // Zustand stores
@@ -36,6 +38,27 @@ function App() {
     clearMessages,
   } = useChatStore();
 
+  const {
+    fontSize,
+    readMessageColor,
+    loadSettings,
+  } = useSettingsStore();
+
+  // Convert hex color to rgba with 0.8 alpha
+  const getReadMessageColorWithAlpha = () => {
+    if (readMessageColor.startsWith('#')) {
+      const hex = readMessageColor.replace('#', '')
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      return `rgba(${r}, ${g}, ${b}, 0.8)`
+    }
+    return readMessageColor
+  }
+
+  // State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -49,6 +72,8 @@ function App() {
   useEffect(() => {
     // Load saved chat data
     loadFromLocalStorage();
+    // Load user settings
+    loadSettings();
 
     // Check if user is already authenticated and validate token
     const validateAuth = async () => {
@@ -96,7 +121,7 @@ function App() {
         window.ipcRenderer.off('oauth-callback', handleOAuthCallback);
       }
     };
-  }, [loadFromLocalStorage, setAuthenticated, setLoading])
+  }, [loadFromLocalStorage, setAuthenticated, setLoading, loadSettings])
 
   useLayoutEffect(() => {
     // Scroll to bottom when messages change (for new messages)
@@ -218,7 +243,12 @@ function App() {
             <span className="channel-name">#{authenticatedUser.name}</span>
           )}
         </div>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+        <div className="header-actions">
+          <button onClick={() => setIsSettingsOpen(true)} className="settings-button" title="Settings">
+            <img src="/gear.svg" alt="Settings" />
+          </button>
+          <button onClick={handleLogout} className="logout-button">Logout</button>
+        </div>
       </div>
       
       {error && <div className="error">{error}</div>}
@@ -230,7 +260,10 @@ function App() {
               key={msg.id} 
               className={`chat-line ${readMessageIds.has(msg.id) ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''}`}
               onClick={() => markAsRead(msg.id)}
-              style={{ cursor: 'pointer' }}
+              style={{ 
+                cursor: 'pointer',
+                ...(readMessageIds.has(msg.id) && { background: getReadMessageColorWithAlpha() })
+              }}
             >
               <div className="chat-line-wrapper">
                 {msg.isFirstMessage && (
@@ -294,11 +327,11 @@ function App() {
                   {msg.bits}
                 </span>
               )}
-              <span className="chat-username" style={{ color: msg.color || '#9147ff' }}>
+              <span className="chat-username" style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px` }}>
                 {msg.displayName}
               </span>
-              <span className="chat-colon">:</span>
-              <span className="chat-message">
+              <span className="chat-colon" style={{ fontSize: `${fontSize}px` }}>:</span>
+              <span className="chat-message" style={{ fontSize: `${fontSize}px` }}>
                 {msg.messageParts.map((part, index) => {
                   if (part.type === 'emote' && part.emoteId) {
                     return (
@@ -353,6 +386,8 @@ function App() {
           </button>
         </form>
       </div>
+
+      <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   )
 }
