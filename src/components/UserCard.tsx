@@ -67,7 +67,7 @@ export function UserCard({
   return (
     <div className="user-card">
       <div className="user-card-header">
-        <h3>User Info</h3>
+        <h3>{userInfo?.displayName || username}</h3>
         <button className="user-card-close" onClick={onClose}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 8.586L3.707 2.293a1 1 0 10-1.414 1.414L8.586 10l-6.293 6.293a1 1 0 001.414 1.414L10 11.414l6.293 6.293a1 1 0 001.414-1.414L11.414 10l6.293-6.293a1 1 0 00-1.414-1.414L10 8.586z"/>
@@ -81,12 +81,10 @@ export function UserCard({
         </div>
       ) : userInfo ? (
         <div className="user-card-content">
-          <img src={userInfo.profileImageUrl} alt={userInfo.displayName} className="user-card-avatar" />
-          
-          <div className="user-card-details">
-            <h2 className="user-card-username">{userInfo.displayName}</h2>
+            <img src={userInfo.profileImageUrl} alt={userInfo.displayName} className="user-card-avatar" />
             
-            <div className="user-card-info">
+            <div className="user-card-details">
+              <div className="user-card-info">
 
               <div className="user-card-info-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

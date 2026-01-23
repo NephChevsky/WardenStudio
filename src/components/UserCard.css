@@ -80,14 +80,6 @@
   gap: 0.5rem;
 }
 
-.user-card-username {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #efeff1;
-  text-align: left;
-}
-
 .user-card-info {
   font-size: 0.8rem;
   width: 100%;
