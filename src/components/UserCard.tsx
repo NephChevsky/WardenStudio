@@ -24,6 +24,8 @@ export function UserCard({
         followingSince: Date | null
         isVip: boolean
         isMod: boolean
+        isBanned: boolean
+        isTimedOut: boolean
     } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
@@ -42,7 +44,9 @@ export function UserCard({
                     subscriptionTier: info.subscriptionTier,
                     followingSince: info.followingSince,
                     isVip: info.isVip,
-                    isMod: info.isMod
+                    isMod: info.isMod,
+                    isBanned: info.isBanned,
+                    isTimedOut: info.isTimedOut
                 })
             }
             setIsLoading(false)
@@ -72,13 +76,21 @@ export function UserCard({
 
     const handleTimeout = async () => {
         if (!userInfo) return
-        await chatService.timeoutUser(userInfo.id)
+        if (userInfo.isTimedOut) {
+            await chatService.unbanUser(userInfo.id)
+        } else {
+            await chatService.timeoutUser(userInfo.id)
+        }
         onClose()
     }
 
     const handleBan = async () => {
         if (!userInfo) return
-        await chatService.banUser(userInfo.id)
+        if (userInfo.isBanned) {
+            await chatService.unbanUser(userInfo.id)
+        } else {
+            await chatService.banUser(userInfo.id)
+        }
         onClose()
     }
 
@@ -153,13 +165,13 @@ export function UserCard({
                     </div>
 
                     <div className="user-card-actions">
-                        <button className="user-card-action-btn timeout" title="Timeout User" onClick={handleTimeout}>
+                        <button className="user-card-action-btn timeout" title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" />
                             </svg>
                         </button>
 
-                        <button className="user-card-action-btn ban" title="Ban User" onClick={handleBan}>
+                        <button className="user-card-action-btn ban" title={userInfo?.isBanned ? "Unban User" : "Ban User"} onClick={handleBan}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z" />
                             </svg>

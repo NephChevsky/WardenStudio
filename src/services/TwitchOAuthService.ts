@@ -12,6 +12,7 @@ export class TwitchOAuthService {
     'moderator:read:chatters', 
     'channel:read:subscriptions', 
     'moderator:read:followers',
+    'moderation:read',
     'moderator:manage:banned_users',
     'channel:manage:vips',
     'channel:manage:moderators'

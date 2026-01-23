@@ -245,6 +245,8 @@ export class TwitchChatService {
     followingSince: Date | null
     isVip: boolean
     isMod: boolean
+    isBanned: boolean
+    isTimedOut: boolean
   } | null> {
     if (!this.apiClient || !this.broadcasterId) {
       return null;
@@ -309,6 +311,25 @@ export class TwitchChatService {
         console.log('Mod check failed for', username, ':', err);
       }
 
+      // Check ban/timeout status
+      let isBanned = false;
+      let isTimedOut = false;
+      try {
+        const bans = await this.apiClient.moderation.getBannedUsers(this.broadcasterId, { userId: user.id });
+        if (bans.data.length > 0) {
+          const ban = bans.data[0];
+          if (ban.expiryDate) {
+            // Has expiry date means it's a timeout
+            isTimedOut = ban.expiryDate > new Date();
+          } else {
+            // No expiry date means permanent ban
+            isBanned = true;
+          }
+        }
+      } catch (err) {
+        console.log('Ban check failed for', username, ':', err);
+      }
+
       return {
         id: user.id,
         displayName: user.displayName,
@@ -319,7 +340,9 @@ export class TwitchChatService {
         subscriptionTier,
         followingSince,
         isVip,
-        isMod
+        isMod,
+        isBanned,
+        isTimedOut
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);
@@ -376,6 +399,20 @@ export class TwitchChatService {
       return true;
     } catch (err) {
       console.error('Failed to ban user:', err);
+      return false;
+    }
+  }
+
+  async unbanUser(id: string): Promise<boolean> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return false;
+    }
+
+    try {
+      await this.apiClient.moderation.unbanUser(this.broadcasterId, id);
+      return true;
+    } catch (err) {
+      console.error('Failed to unban user:', err);
       return false;
     }
   }
