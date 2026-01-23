@@ -410,7 +410,40 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
+
+.autocomplete-suggestions {
+  position: absolute;
+  bottom: 100%;
+  left: 0.5rem;
+  right: 0.5rem;
+  background: #18181b;
+  border: 1px solid #2c2c35;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 0.25rem;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.autocomplete-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.1s;
+  color: #efeff1;
+  font-size: 0.875rem;
+}
+
+.autocomplete-item:hover {
+  background: #2c2c35;
+}
+
+.autocomplete-item.selected {
+  background: #3a3a3d;
+}
+
 
 .chat-actions {
   display: flex;

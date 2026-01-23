@@ -58,6 +58,9 @@ function App() {
 
   // State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([])
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
+  const [showAutocomplete, setShowAutocomplete] = useState(false)
 
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
@@ -214,6 +217,115 @@ function App() {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }
+
+  const getUniqueUsernames = (): string[] => {
+    const usernamesSet = new Set<string>()
+    messages.forEach(msg => {
+      usernamesSet.add(msg.displayName)
+    })
+    return Array.from(usernamesSet).sort()
+  }
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && showAutocomplete && autocompleteSuggestions.length > 0) {
+      e.preventDefault()
+      // Complete with selected suggestion
+      const selectedUsername = autocompleteSuggestions[selectedSuggestionIndex]
+      const words = messageInput.split(' ')
+      words[words.length - 1] = selectedUsername
+      
+      setMessageInput(words.join(' ') + ' ')
+      setShowAutocomplete(false)
+      setAutocompleteSuggestions([])
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      
+      if (showAutocomplete && autocompleteSuggestions.length > 0) {
+        // Complete with selected suggestion
+        const selectedUsername = autocompleteSuggestions[selectedSuggestionIndex]
+        const words = messageInput.split(' ')
+        words[words.length - 1] = selectedUsername
+        
+        setMessageInput(words.join(' ') + ' ')
+        setShowAutocomplete(false)
+        setAutocompleteSuggestions([])
+      } else {
+        // Trigger autocomplete
+        const words = messageInput.split(' ')
+        const lastWord = words[words.length - 1]
+        
+        if (lastWord.length > 0) {
+          const usernames = getUniqueUsernames()
+          const searchTerm = lastWord.startsWith('@') ? lastWord.slice(1) : lastWord
+          
+          const filtered = usernames.filter(username => 
+            username.toLowerCase().startsWith(searchTerm.toLowerCase())
+          )
+          
+          if (filtered.length > 0) {
+            setAutocompleteSuggestions(filtered)
+            setSelectedSuggestionIndex(0)
+            setShowAutocomplete(true)
+          }
+        }
+      }
+    } else if (e.key === 'ArrowDown' && showAutocomplete) {
+      e.preventDefault()
+      setSelectedSuggestionIndex(prev => 
+        prev < autocompleteSuggestions.length - 1 ? prev + 1 : prev
+      )
+    } else if (e.key === 'ArrowUp' && showAutocomplete) {
+      e.preventDefault()
+      setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : prev)
+    } else if (e.key === 'Escape' && showAutocomplete) {
+      e.preventDefault()
+      setShowAutocomplete(false)
+      setAutocompleteSuggestions([])
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setMessageInput(newValue)
+    
+    // Check if we should trigger autocomplete
+    const words = newValue.split(' ')
+    const lastWord = words[words.length - 1]
+    
+    if (lastWord.startsWith('@') && lastWord.length > 1) {
+      // Typing after @, show filtered suggestions
+      const usernames = getUniqueUsernames()
+      const searchTerm = lastWord.slice(1)
+      
+      const filtered = usernames.filter(username => 
+        username.toLowerCase().startsWith(searchTerm.toLowerCase())
+      )
+      
+      if (filtered.length > 0) {
+        setAutocompleteSuggestions(filtered)
+        setSelectedSuggestionIndex(0)
+        setShowAutocomplete(true)
+      } else {
+        setShowAutocomplete(false)
+        setAutocompleteSuggestions([])
+      }
+    } else if (lastWord === '@') {
+      // Just typed @, show all usernames
+      const usernames = getUniqueUsernames()
+      if (usernames.length > 0) {
+        setAutocompleteSuggestions(usernames)
+        setSelectedSuggestionIndex(0)
+        setShowAutocomplete(true)
+      }
+    } else {
+      // Hide autocomplete when not typing @mention
+      if (showAutocomplete) {
+        setShowAutocomplete(false)
+        setAutocompleteSuggestions([])
+      }
+    }
+  }
+
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -386,13 +498,34 @@ function App() {
             Scroll to Bottom
           </button>
         </div>
+        {showAutocomplete && autocompleteSuggestions.length > 0 && (
+          <div className="autocomplete-suggestions">
+            {autocompleteSuggestions.map((username, index) => (
+              <div
+                key={username}
+                className={`autocomplete-item ${index === selectedSuggestionIndex ? 'selected' : ''}`}
+                onClick={() => {
+                  const words = messageInput.split(' ')
+                  words[words.length - 1] = username
+                  
+                  setMessageInput(words.join(' ') + ' ')
+                  setShowAutocomplete(false)
+                  setAutocompleteSuggestions([])
+                }}
+              >
+                {username}
+              </div>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSendMessage} className="chat-input-form">
           <input
             type="text"
             className="chat-input"
             placeholder={isConnected ? `Send a message` : 'Connecting...'}
             value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
             disabled={!isConnected}
           />
           <button type="submit" className="chat-send-button" disabled={!isConnected || !messageInput.trim()}>
