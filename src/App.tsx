@@ -9,6 +9,7 @@ import { useSettingsStore } from './store/settingsStore'
 import { UpdateNotification } from './components/UpdateNotification'
 import { Settings } from './components/Settings'
 import { UserCard } from './components/UserCard'
+import { ContextMenu } from './components/ContextMenu'
 
 function App() {
   // Zustand stores
@@ -373,15 +374,6 @@ function App() {
     }
   }
 
-  // Close context menu on click outside
-  useEffect(() => {
-    if (contextMenu) {
-      const handleClick = () => setContextMenu(null)
-      document.addEventListener('click', handleClick)
-      return () => document.removeEventListener('click', handleClick)
-    }
-  }, [contextMenu])
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     setMessageInput(newValue)
@@ -648,38 +640,20 @@ function App() {
         </form>
       </div>
 
-      {contextMenu && (() => {
-        const message = messages.find(m => m.id === contextMenu.messageId);
-        const isBroadcaster = message?.badges.some(badge => 
-          badge.title.toLowerCase().includes('broadcaster')
-        ) || false;
-        
-        return (
-          <div
-            className="context-menu"
-            style={{
-              position: 'fixed',
-              left: `${contextMenu.x}px`,
-              top: `${contextMenu.y}px`,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="context-menu-item" onClick={handleDeleteMessage}>
-              Delete Message
-            </button>
-            {!isBroadcaster && (
-              <>
-                <button className="context-menu-item" onClick={handleTimeoutUser}>
-                  Timeout
-                </button>
-                <button className="context-menu-item" onClick={handleBanUser}>
-                  Ban
-                </button>
-              </>
-            )}
-          </div>
-        );
-      })()}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          messageId={contextMenu.messageId}
+          username={contextMenu.username}
+          userId={contextMenu.userId}
+          messages={messages}
+          onDeleteMessage={handleDeleteMessage}
+          onTimeoutUser={handleTimeoutUser}
+          onBanUser={handleBanUser}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
 
       <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
