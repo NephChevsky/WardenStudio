@@ -36,6 +36,18 @@ contextBridge.exposeInMainWorld('electron', {
       return ipcRenderer.invoke('store-has', key)
     },
   },
+  // Database API
+  database: {
+    upsertViewer(id: string, username: string, displayName: string) {
+      return ipcRenderer.invoke('db-upsert-viewer', id, username, displayName)
+    },
+    getViewer(id: string) {
+      return ipcRenderer.invoke('db-get-viewer', id)
+    },
+    getAllViewers() {
+      return ipcRenderer.invoke('db-get-all-viewers')
+    },
+  },
   // Auto-updater API
   updater: {
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

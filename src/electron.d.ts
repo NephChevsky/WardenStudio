@@ -19,6 +19,18 @@ export interface Updater {
   getAppVersion(): Promise<string>;
 }
 
+export interface Viewer {
+  id: string;
+  username: string;
+  displayName: string;
+}
+
+export interface Database {
+  upsertViewer(id: string, username: string, displayName: string): Promise<void>;
+  getViewer(id: string): Promise<Viewer | null>;
+  getAllViewers(): Promise<Viewer[]>;
+}
+
 export interface UpdateInfo {
   version: string;
   releaseNotes?: string;
@@ -37,6 +49,7 @@ declare global {
     ipcRenderer?: IpcRenderer;
     electron?: {
       store: SecureStore;
+      database: Database;
       updater: Updater;
     };
   }

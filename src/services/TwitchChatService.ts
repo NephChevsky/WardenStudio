@@ -114,7 +114,7 @@ export class TwitchChatService {
       botLevel: "known"
     });
 
-    this.chatClient.onMessage((_channel, user, text, msg) => {
+    this.chatClient.onMessage(async (_channel, user, text, msg) => {
       if (this.onMessageCallback) {
         const badges: ChatBadge[] = [];
         // Use Twurple's badge info from message
@@ -134,6 +134,19 @@ export class TwitchChatService {
         // Store user's own badges for use in sendMessage
         if (this.currentUser && user === this.currentUser.name) {
           this.userBadges = badges;
+        }
+
+        // Track viewer in database
+        if (window.electron?.database && msg.userInfo.userId) {
+          try {
+            await window.electron.database.upsertViewer(
+              msg.userInfo.userId,
+              user,
+              msg.userInfo.displayName
+            );
+          } catch (err) {
+            console.error('Failed to track viewer:', err);
+          }
         }
 
         const chatMessage: ChatMessage = {

@@ -5,6 +5,7 @@ import { createServer } from 'node:http'
 import { setupAutoUpdater } from './updater'
 import Store from 'electron-store'
 import log from 'electron-log'
+import { databaseService } from './database'
 
 // Configure logging
 log.transports.file.level = 'info'
@@ -51,6 +52,19 @@ ipcMain.handle('store-delete', (_event, key: string) => {
 
 ipcMain.handle('store-has', (_event, key: string) => {
   return store.has(key)
+})
+
+// Setup IPC handlers for database
+ipcMain.handle('db-upsert-viewer', (_event, id: string, username: string, displayName: string) => {
+  databaseService.upsertViewer(id, username, displayName)
+})
+
+ipcMain.handle('db-get-viewer', (_event, id: string) => {
+  return databaseService.getViewer(id)
+})
+
+ipcMain.handle('db-get-all-viewers', () => {
+  return databaseService.getAllViewers()
 })
 
 // The built directory structure
@@ -214,6 +228,8 @@ app.on('window-all-closed', () => {
     if (oauthServer) {
       oauthServer.close()
     }
+    // Close database
+    databaseService.close()
     app.quit()
     win = null
   }
@@ -244,6 +260,10 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     log.info('App is ready, initializing...')
     try {
+      // Initialize database
+      databaseService.initialize()
+      log.info('Database initialized successfully')
+      
       createOAuthServer()
       const window = createWindow()
       
