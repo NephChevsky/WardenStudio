@@ -146,7 +146,7 @@ function createOAuthServer() {
         '    fetch("http://localhost:3000?" + urlParams.toString())' +
         '      .then(() => {' +
         '        console.log("Sent to app");' +
-        '        document.body.innerHTML = "<h1>✓ Success!</h1><p>You can close this window.</p>";' +
+        '        document.body.innerHTML = "<h1>Success!</h1><p>You can close this window.</p>";' +
         '      })' +
         '      .catch(err => console.error("Failed to send:", err));' +
         '  } else {' +
