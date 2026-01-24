@@ -23,6 +23,7 @@ export interface ChatMessage {
   bits?: number;
   isReply: boolean;
   replyParentMessageId?: string;
+  emoteOffsets?: string;
 }
 
 class DatabaseService {
@@ -77,7 +78,8 @@ class DatabaseService {
         isCheer INTEGER NOT NULL DEFAULT 0,
         bits INTEGER,
         isReply INTEGER NOT NULL DEFAULT 0,
-        replyParentMessageId TEXT
+        replyParentMessageId TEXT,
+        emoteOffsets TEXT
       )
     `);
 
@@ -130,10 +132,10 @@ class DatabaseService {
         id, userId, message, timestamp, color, badges,
         isFirstMessage,
         isReturningChatter, isHighlighted, isCheer, bits, isReply,
-        replyParentMessageId
+        replyParentMessageId, emoteOffsets
       )
       VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
       ON CONFLICT(id) DO NOTHING
     `);
@@ -151,7 +153,8 @@ class DatabaseService {
       message.isCheer ? 1 : 0,
       message.bits || null,
       message.isReply ? 1 : 0,
-      message.replyParentMessageId || null
+      message.replyParentMessageId || null,
+      message.emoteOffsets || null
     );
   }
 
@@ -222,6 +225,10 @@ class DatabaseService {
     if (updates.replyParentMessageId !== undefined) {
       fields.push('replyParentMessageId = ?');
       values.push(updates.replyParentMessageId || null);
+    }
+    if (updates.emoteOffsets !== undefined) {
+      fields.push('emoteOffsets = ?');
+      values.push(updates.emoteOffsets || null);
     }
 
     if (fields.length === 0) return;

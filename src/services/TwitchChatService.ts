@@ -209,10 +209,21 @@ export class TwitchChatService {
             
             // Insert message if it's not a duplicate self-message
             if (shouldInsert) {
+              // Convert emoteOffsets Map to JSON string for storage
+              let emoteOffsetsJson = null;
+              if (msg.emoteOffsets && msg.emoteOffsets.size > 0) {
+                const emoteOffsetsObj: Record<string, string[]> = {};
+                msg.emoteOffsets.forEach((positions, id) => {
+                  emoteOffsetsObj[id] = positions;
+                });
+                emoteOffsetsJson = JSON.stringify(emoteOffsetsObj);
+              }
+
               await window.electron.database.insertMessage({
                 ...chatMessage,
                 userId: msg.userInfo.userId,
-                badges: badges.map(b => b.imageUrl)
+                badges: badges.map(b => b.imageUrl),
+                emoteOffsets: emoteOffsetsJson
               });
             }
           } catch (err) {
@@ -282,7 +293,8 @@ export class TwitchChatService {
           await window.electron.database.insertMessage({
             ...chatMessage,
             userId: this.currentUser.id,
-            badges: badges.map(b => b.imageUrl)
+            badges: badges.map(b => b.imageUrl),
+            emoteOffsets: null // Self-sent messages don't have emotes initially
           });
         } catch (err) {
           console.error('Failed to save sent message to database:', err);
