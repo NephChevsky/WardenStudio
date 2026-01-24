@@ -67,6 +67,18 @@ ipcMain.handle('db-get-all-viewers', () => {
   return databaseService.getAllViewers()
 })
 
+ipcMain.handle('db-insert-message', (_event, message: any) => {
+  databaseService.insertMessage(message)
+})
+
+ipcMain.handle('db-find-recent-self-message', (_event, userId: string, messageText: string, withinMs: number) => {
+  return databaseService.findRecentSelfMessage(userId, messageText, withinMs)
+})
+
+ipcMain.handle('db-update-message', (_event, oldId: string, updates: any) => {
+  databaseService.updateMessage(oldId, updates)
+})
+
 // The built directory structure
 //
 // ├─┬─┬ dist

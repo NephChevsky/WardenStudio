@@ -174,6 +174,52 @@ export class TwitchChatService {
           replyParentDisplayName: msg.parentMessageUserDisplayName ?? undefined,
           replyParentMessage: msg.parentMessageText ?? undefined,
         };
+
+        // Save message to database
+        if (window.electron?.database && msg.userInfo.userId) {
+          try {
+            let shouldInsert = true;
+            
+            // Check if this is a message sent by the current user
+            if (this.currentUser && msg.userInfo.userId === this.currentUser.id) {
+              // Look for a recent self-sent message that matches
+              const recentSelfMessage = await window.electron.database.findRecentSelfMessage(
+                msg.userInfo.userId,
+                text,
+                2000 // within 2 seconds
+              );
+              
+              if (recentSelfMessage) {
+                // Update the existing message with the real message ID and info
+                await window.electron.database.updateMessage(recentSelfMessage.id, {
+                  id: msg.id,
+                  badges: badges.map(b => b.imageUrl),
+                  timestamp: new Date(),
+                  isFirstMessage: msg.isFirst ?? false,
+                  isReturningChatter: msg.isReturningChatter ?? false,
+                  isHighlighted: msg.isHighlight ?? false,
+                  isCheer: msg.isCheer ?? false,
+                  bits: msg.bits,
+                  isReply: msg.isReply ?? false,
+                  replyParentMessageId: msg.parentMessageId ?? undefined,
+                });
+                shouldInsert = false;
+              }
+            }
+            
+            // Insert message if it's not a duplicate self-message
+            if (shouldInsert) {
+              await window.electron.database.insertMessage({
+                ...chatMessage,
+                userId: msg.userInfo.userId,
+                badges: badges.map(b => b.imageUrl)
+              });
+            }
+          } catch (err) {
+            console.error('Failed to save message to database:', err);
+          }
+        }
+
         this.onMessageCallback(chatMessage);
       }
     });
@@ -229,6 +275,19 @@ export class TwitchChatService {
         isCheer: false,
         isReply: false,
       };
+
+      // Save message to database
+      if (window.electron?.database) {
+        try {
+          await window.electron.database.insertMessage({
+            ...chatMessage,
+            userId: this.currentUser.id,
+            badges: badges.map(b => b.imageUrl)
+          });
+        } catch (err) {
+          console.error('Failed to save sent message to database:', err);
+        }
+      }
       
       this.onMessageCallback(chatMessage);
     }

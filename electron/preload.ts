@@ -47,6 +47,15 @@ contextBridge.exposeInMainWorld('electron', {
     getAllViewers() {
       return ipcRenderer.invoke('db-get-all-viewers')
     },
+    insertMessage(message: any) {
+      return ipcRenderer.invoke('db-insert-message', message)
+    },
+    findRecentSelfMessage(userId: string, messageText: string, withinMs: number) {
+      return ipcRenderer.invoke('db-find-recent-self-message', userId, messageText, withinMs)
+    },
+    updateMessage(oldId: string, updates: any) {
+      return ipcRenderer.invoke('db-update-message', oldId, updates)
+    },
   },
   // Auto-updater API
   updater: {

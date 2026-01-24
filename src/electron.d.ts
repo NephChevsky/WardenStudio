@@ -29,6 +29,9 @@ export interface Database {
   upsertViewer(id: string, username: string, displayName: string): Promise<void>;
   getViewer(id: string): Promise<Viewer | null>;
   getAllViewers(): Promise<Viewer[]>;
+  insertMessage(message: any): Promise<void>;
+  findRecentSelfMessage(userId: string, messageText: string, withinMs: number): Promise<{ id: string } | null>;
+  updateMessage(oldId: string, updates: any): Promise<void>;
 }
 
 export interface UpdateInfo {
