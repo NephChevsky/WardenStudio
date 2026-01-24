@@ -19,7 +19,6 @@ export function UserCard({
         profileImageUrl: string
         createdAt: Date
         isSubscribed: boolean
-        subscriptionMonths: number
         subscriptionTier: string
         followingSince: Date | null
         isVip: boolean
@@ -42,7 +41,6 @@ export function UserCard({
                     profileImageUrl: info.profileImageUrl,
                     createdAt: info.createdAt,
                     isSubscribed: info.isSubscribed,
-                    subscriptionMonths: info.subscriptionMonths,
                     subscriptionTier: info.subscriptionTier,
                     followingSince: info.followingSince,
                     isVip: info.isVip,
@@ -76,17 +74,6 @@ export function UserCard({
             minute: '2-digit',
             hour12: true
         })
-    }
-
-    const getSubscriptionText = () => {
-        if (!userInfo) return ''
-        if (userInfo.isSubscribed && userInfo.subscriptionMonths > 0) {
-            return `${userInfo.subscriptionTier} - ${userInfo.subscriptionMonths} month${userInfo.subscriptionMonths !== 1 ? 's' : ''}`
-        } else if (userInfo.subscriptionMonths > 0) {
-            return `Previously subscribed (${userInfo.subscriptionMonths} month${userInfo.subscriptionMonths !== 1 ? 's' : ''})`
-        } else {
-            return 'Never subscribed'
-        }
     }
 
     const handleTimeout = async () => {
@@ -168,12 +155,14 @@ export function UserCard({
                                     </div>
                                 )}
 
-                                <div className="user-card-info-item">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" aria-label="Subscriber" fill="currentColor">
-                                        <path d="M10.883 2.72c.43-.96 1.803-.96 2.234 0l2.262 5.037 5.525.578c1.052.11 1.477 1.406.69 2.11l-4.127 3.691 1.153 5.395c.22 1.028-.89 1.828-1.808 1.303L12 18.08l-4.812 2.755c-.917.525-2.028-.275-1.808-1.303l1.153-5.395-4.127-3.691c-.786-.704-.362-2 .69-2.11l5.525-.578 2.262-5.037Z" />
-                                    </svg>
-                                    <span>{getSubscriptionText()}</span>
-                                </div>
+                                {userInfo.isSubscribed && (
+                                    <div className="user-card-info-item">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" aria-label="Subscriber" fill="currentColor">
+                                            <path d="M10.883 2.72c.43-.96 1.803-.96 2.234 0l2.262 5.037 5.525.578c1.052.11 1.477 1.406.69 2.11l-4.127 3.691 1.153 5.395c.22 1.028-.89 1.828-1.808 1.303L12 18.08l-4.812 2.755c-.917.525-2.028-.275-1.808-1.303l1.153-5.395-4.127-3.691c-.786-.704-.362-2 .69-2.11l5.525-.578 2.262-5.037Z" />
+                                        </svg>
+                                        <span>{userInfo.subscriptionTier}</span>
+                                    </div>
+                                )}
 
                             </div>
                         </div>

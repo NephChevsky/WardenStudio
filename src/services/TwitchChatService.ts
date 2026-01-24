@@ -241,7 +241,6 @@ export class TwitchChatService {
     profileImageUrl: string
     createdAt: Date
     isSubscribed: boolean
-    subscriptionMonths: number
     subscriptionTier: string
     followingSince: Date | null
     isVip: boolean
@@ -263,7 +262,6 @@ export class TwitchChatService {
 
       // Check subscription status
       let isSubscribed = false;
-      let subscriptionMonths = 0;
       let subscriptionTier = 'None';
 
       try {
@@ -271,8 +269,6 @@ export class TwitchChatService {
         console.log('Subscription data for', username, ':', subscription);
         if (subscription) {
           isSubscribed = true;
-          // Get cumulative months if available
-          subscriptionMonths = 1;
           // Get subscription tier (1000 = Tier 1, 2000 = Tier 2, 3000 = Tier 3)
           const tier = subscription.tier;
           subscriptionTier = tier === '3000' ? 'Tier 3' : tier === '2000' ? 'Tier 2' : 'Tier 1';
@@ -281,7 +277,6 @@ export class TwitchChatService {
         // User is not subscribed or we don't have permission to check
         console.log('Subscription check failed for', username, ':', err);
         isSubscribed = false;
-        subscriptionMonths = 0;
         subscriptionTier = 'None';
       }
 
@@ -341,7 +336,6 @@ export class TwitchChatService {
         profileImageUrl: user.profilePictureUrl,
         createdAt: user.creationDate,
         isSubscribed,
-        subscriptionMonths,
         subscriptionTier,
         followingSince,
         isVip,
