@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './UserCard.css'
 import { TwitchChatService } from '../services/TwitchChatService'
 
@@ -6,12 +6,16 @@ interface UserCardProps {
     username: string
     chatService: TwitchChatService
     onClose: () => void
+    initialX?: number
+    initialY?: number
 }
 
 export function UserCard({
     username,
     chatService,
-    onClose
+    onClose,
+    initialX,
+    initialY
 }: UserCardProps) {
     const [userInfo, setUserInfo] = useState<{
         id: string
@@ -29,6 +33,58 @@ export function UserCard({
         timeoutExpiresAt: Date | null
     } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isDragging, setIsDragging] = useState(false)
+    const [position, setPosition] = useState({ 
+        x: initialX !== undefined ? initialX + 10 : window.innerWidth / 2 - 175, 
+        y: initialY !== undefined ? initialY + 10 : 100 
+    })
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const cardRef = useRef<HTMLDivElement>(null)
+
+    const constrainPosition = (x: number, y: number) => {
+        const cardWidth = 350
+        const cardHeight = cardRef.current?.offsetHeight || 500
+        const padding = 10
+
+        let newX = x
+        let newY = y
+
+        // Keep within horizontal bounds
+        if (newX + cardWidth + padding > window.innerWidth) {
+            newX = window.innerWidth - cardWidth - padding
+        }
+        if (newX < padding) {
+            newX = padding
+        }
+
+        // Keep within vertical bounds
+        if (newY + cardHeight + padding > window.innerHeight) {
+            newY = window.innerHeight - cardHeight - padding
+        }
+        if (newY < padding) {
+            newY = padding
+        }
+
+        return { x: newX, y: newY }
+    }
+
+    useEffect(() => {
+        // Update position when initialX or initialY changes (new user clicked)
+        if (initialX !== undefined && initialY !== undefined) {
+            const constrained = constrainPosition(initialX + 10, initialY + 10)
+            setPosition(constrained)
+        }
+    }, [initialX, initialY])
+
+    useEffect(() => {
+        // Constrain position after content loads and height is known
+        if (cardRef.current) {
+            const constrained = constrainPosition(position.x, position.y)
+            if (constrained.x !== position.x || constrained.y !== position.y) {
+                setPosition(constrained)
+            }
+        }
+    }, [userInfo, isLoading])
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -56,6 +112,40 @@ export function UserCard({
 
         fetchUserInfo()
     }, [username, chatService])
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (cardRef.current) {
+            setIsDragging(true)
+            setDragOffset({
+                x: e.clientX - position.x,
+                y: e.clientY - position.y
+            })
+        }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (isDragging) {
+            const newX = e.clientX - dragOffset.x
+            const newY = e.clientY - dragOffset.y
+            const constrained = constrainPosition(newX, newY)
+            setPosition(constrained)
+        }
+    }
+
+    const handleMouseUp = () => {
+        setIsDragging(false)
+    }
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+            }
+        }
+    }, [isDragging, dragOffset])
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('en-US', {
@@ -117,8 +207,16 @@ export function UserCard({
     }
 
     return (
-        <div className="user-card">
-            <div className="user-card-header">
+        <div 
+            ref={cardRef}
+            className="user-card"
+            style={{
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                cursor: isDragging ? 'grabbing' : 'default'
+            }}
+        >
+            <div className="user-card-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab' }}>
                 <h3>{userInfo?.displayName || username}</h3>
                 <button className="user-card-close" onClick={onClose}>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">

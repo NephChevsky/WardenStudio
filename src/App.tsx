@@ -66,6 +66,7 @@ function App() {
   const [showAutocomplete, setShowAutocomplete] = useState(false)
   const [chatters, setChatters] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [userCardPosition, setUserCardPosition] = useState<{ x: number; y: number } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string; username: string; userId: string } | null>(null)
 
   // Refs
@@ -321,6 +322,7 @@ function App() {
   const handleUsernameClick = async (username: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedUser(username)
+    setUserCardPosition({ x: e.clientX, y: e.clientY })
   }
 
   const handleContextMenu = (e: React.MouseEvent, messageId: string) => {
@@ -479,7 +481,12 @@ function App() {
           <UserCard
             username={selectedUser}
             chatService={chatServiceRef.current}
-            onClose={() => setSelectedUser(null)}
+            onClose={() => {
+              setSelectedUser(null)
+              setUserCardPosition(null)
+            }}
+            initialX={userCardPosition?.x}
+            initialY={userCardPosition?.y}
           />
         )}
       </div>
