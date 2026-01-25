@@ -83,8 +83,6 @@ function App() {
   )
 
   useEffect(() => {
-    // Load saved chat data from database
-    loadFromDatabase();
     // Load user settings
     loadSettings();
 
@@ -97,9 +95,9 @@ function App() {
         } else {
           // Token is invalid, clear it
           setAuthenticated(null);
+          setLoading(false);
         }
       }
-      setLoading(false);
     };
     
     validateAuth();
@@ -186,6 +184,8 @@ function App() {
           // Initialize API service first
           await apiService.initialize(channel, accessToken, clientId)
 
+          loadFromDatabase();
+
           // Get necessary data from API service
           const currentUser = apiService.getCurrentUser()
           const broadcasterId = apiService.getBroadcasterId()
@@ -230,6 +230,8 @@ function App() {
           await oauthServiceRef.current.clearToken()
           setAuthenticated(null)
         }
+
+        setLoading(false);
       }
     })()
 
