@@ -78,7 +78,7 @@ export function ChatMessage({
             <span>Highlighted Message</span>
           </div>
         )}
-        {msg.bits !== 0 && (
+        {!!msg.bits && (
           <div className="cheer-indicator">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path d="M3 12l7-10 7 10h-5v6H8v-6H3z"/>
@@ -86,7 +86,7 @@ export function ChatMessage({
             <span>Cheered {msg.bits} Bits</span>
           </div>
         )}
-        {msg.replyParentMessageId && (() => {
+        {!!msg.replyParentMessageId && (() => {
           const parentMessage = getMessageById(msg.replyParentMessageId);
           if (!parentMessage) return null;
           return (
