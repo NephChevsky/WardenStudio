@@ -41,7 +41,7 @@ export function ChatMessage({
   return (
     <div 
       key={msg.id} 
-      className={`chat-line ${isRead ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''} ${msg.isDeleted ? 'deleted' : ''}`}
+      className={`chat-line ${isRead ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''} ${msg.bits ? 'cheer-message' : ''} ${msg.isDeleted ? 'deleted' : ''}`}
       onClick={() => {
         if (!isContextMenuOpen) {
           onMarkAsRead(msg.id)
@@ -78,6 +78,14 @@ export function ChatMessage({
             <span>Highlighted Message</span>
           </div>
         )}
+        {msg.bits && (
+          <div className="cheer-indicator">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 12l7-10 7 10h-5v6H8v-6H3z"/>
+            </svg>
+            <span>Cheered {msg.bits} Bits</span>
+          </div>
+        )}
         {msg.replyParentMessageId && (() => {
           const parentMessage = getMessageById(msg.replyParentMessageId);
           if (!parentMessage) return null;
@@ -105,14 +113,7 @@ export function ChatMessage({
               />
             ))}
           </span>
-          {msg.bits && (
-            <span className="cheer-amount">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M3 12l7-10 7 10h-5v6H8v-6H3z"/>
-              </svg>
-              {msg.bits}
-            </span>
-          )}
+
           <span 
             className="chat-username" 
             style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px`, cursor: 'pointer' }}
