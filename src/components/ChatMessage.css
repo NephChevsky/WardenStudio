@@ -64,8 +64,6 @@
   align-items: center;
   gap: calc(var(--base-font-size, 13px) * 0.25);
   padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
-  background: #6554c0;
-  border-radius: 3px;
   font-size: calc(var(--base-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
@@ -141,8 +139,8 @@
   gap: calc(var(--base-font-size, 13px) * 0.25);
   padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
   font-size: calc(var(--base-font-size, 13px) * 0.85);
-  font-weight: 500;
-  color: #adadb8;
+  font-weight: 600;
+  color: #ffffff;
   width: fit-content;
   max-width: 100%;
 }
