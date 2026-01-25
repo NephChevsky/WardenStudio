@@ -7,7 +7,6 @@ import { useChatStore } from './store/chatStore'
 import { useSettingsStore } from './store/settingsStore'
 import { UpdateNotification } from './components/UpdateNotification'
 import { Settings } from './components/Settings'
-import { UserCard } from './components/UserCard'
 import { ContextMenu } from './components/ContextMenu'
 import { ChatMessage } from './components/ChatMessage'
 
@@ -65,8 +64,6 @@ function App() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
   const [showAutocomplete, setShowAutocomplete] = useState(false)
   const [chatters, setChatters] = useState<string[]>([])
-  const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [userCardPosition, setUserCardPosition] = useState<{ x: number; y: number } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string; username: string; userId: string } | null>(null)
 
   // Refs
@@ -317,12 +314,6 @@ function App() {
     }
   }
 
-  const handleUsernameClick = async (username: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedUser(username)
-    setUserCardPosition({ x: e.clientX, y: e.clientY })
-  }
-
   const handleContextMenu = (e: React.MouseEvent, messageId: string) => {
     e.preventDefault()
     e.stopPropagation()
@@ -333,7 +324,7 @@ function App() {
         y: e.clientY, 
         messageId,
         username: message.username,
-        userId: message.username // We'll need to get the actual user ID from the chat service
+        userId: message.userId
       })
     }
   }
@@ -475,26 +466,14 @@ function App() {
                 readMessageBackgroundColor={getReadMessageColorWithAlpha()}
                 allMessages={messages}
                 onMarkAsRead={markAsRead}
-                onUsernameClick={handleUsernameClick}
                 onContextMenu={handleContextMenu}
                 isContextMenuOpen={contextMenu !== null}
+                chatService={chatServiceRef.current}
               />
             );
           })}
           <div ref={messagesEndRef} />
         </div>
-        {selectedUser && (
-          <UserCard
-            username={selectedUser}
-            chatService={chatServiceRef.current}
-            onClose={() => {
-              setSelectedUser(null)
-              setUserCardPosition(null)
-            }}
-            initialX={userCardPosition?.x}
-            initialY={userCardPosition?.y}
-          />
-        )}
       </div>
 
       <div className="chat-input-container">

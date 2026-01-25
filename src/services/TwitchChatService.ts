@@ -6,6 +6,7 @@ import { setBadgeCache } from '../utils/badgeParser';
 export interface ChatMessage {
   id: string;
   username: string;
+  userId: string;
   displayName: string;
   message: string;
   timestamp: Date;
@@ -138,6 +139,7 @@ export class TwitchChatService {
         const chatMessage: ChatMessage = {
           id: msg.id,
           username: user,
+          userId: msg.userInfo.userId,
           displayName: msg.userInfo.displayName,
           message: text,
           timestamp: new Date(),
@@ -238,6 +240,7 @@ export class TwitchChatService {
       const chatMessage: ChatMessage = {
         id: `self-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         username: this.currentUser.name,
+        userId: this.currentUser.id,
         displayName: this.currentUser.displayName,
         message: message,
         timestamp: new Date(),
@@ -282,49 +285,116 @@ export class TwitchChatService {
     }
   }
 
-  async getUserInfo(username: string): Promise<{
+  async getUserSubscriptionInfo(userId: string): Promise<{
+    isSubscribed: boolean;
+    subscriptionTier: string;
+  }> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return { isSubscribed: false, subscriptionTier: 'None' };
+    }
+
+    let isSubscribed = false;
+    let subscriptionTier = 'None';
+
+    try {
+      const subscription = await this.apiClient.subscriptions.getSubscriptionForUser(this.broadcasterId, userId);
+      if (subscription) {
+        isSubscribed = true;
+        // Get subscription tier (1000 = Tier 1, 2000 = Tier 2, 3000 = Tier 3)
+        const tier = subscription.tier;
+        subscriptionTier = tier === '3000' ? 'Tier 3' : tier === '2000' ? 'Tier 2' : 'Tier 1';
+      }
+    } catch (err) {
+      // User is not subscribed or we don't have permission to check
+      isSubscribed = false;
+      subscriptionTier = 'None';
+    }
+
+    return { isSubscribed, subscriptionTier };
+  }
+
+  async getUserBanInfos(userId: string): Promise<{
+    isBanned: boolean;
+    isTimedOut: boolean;
+    timeoutExpiresAt: Date | null;
+  }> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return { isBanned: false, isTimedOut: false, timeoutExpiresAt: null };
+    }
+
+    let isBanned = false;
+    let isTimedOut = false;
+    let timeoutExpiresAt: Date | null = null;
+
+    try {
+      const bans = await this.apiClient.moderation.getBannedUsers(this.broadcasterId, { userId });
+      if (bans.data.length > 0) {
+        const ban = bans.data[0];
+        if (ban.expiryDate) {
+          // Has expiry date means it's a timeout
+          isTimedOut = ban.expiryDate > new Date();
+          timeoutExpiresAt = ban.expiryDate;
+        } else {
+          // No expiry date means permanent ban
+          isBanned = true;
+        }
+      }
+    } catch (err) {
+      // User is not banned or we don't have permission to check
+      isBanned = false;
+      isTimedOut = false;
+      timeoutExpiresAt = null;
+    }
+
+    return { isBanned, isTimedOut, timeoutExpiresAt };
+  }
+
+  async getVips(): Promise<string[]> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return [];
+    }
+
+    try {
+      const vips = await this.apiClient.channels.getVips(this.broadcasterId);
+      return vips.data.map(vip => vip.id);
+    } catch (err) {
+      console.log('Failed to fetch VIPs:', err);
+      return [];
+    }
+  }
+
+  async getModerators(): Promise<string[]> {
+    if (!this.apiClient || !this.broadcasterId) {
+      return [];
+    }
+
+    try {
+      const mods = await this.apiClient.moderation.getModerators(this.broadcasterId);
+      return mods.data.map(mod => mod.userId);
+    } catch (err) {
+      console.log('Failed to fetch moderators:', err);
+      return [];
+    }
+  }
+
+  async getUserInfo(userId: string): Promise<{
     id: string
     displayName: string
     profileImageUrl: string
     createdAt: Date
-    isSubscribed: boolean
-    subscriptionTier: string
     followingSince: Date | null
-    isVip: boolean
-    isMod: boolean
     isBroadcaster: boolean
-    isBanned: boolean
-    isTimedOut: boolean
-    timeoutExpiresAt: Date | null
   } | null> {
+
     if (!this.apiClient || !this.broadcasterId) {
       return null;
     }
+    
     try {
       // Get user by username
-      const user = await this.apiClient.users.getUserByName(username);
+      const user = await this.apiClient.users.getUserById(userId);
       if (!user) {
         return null;
-      }
-
-      // Check subscription status
-      let isSubscribed = false;
-      let subscriptionTier = 'None';
-
-      try {
-        const subscription = await this.apiClient.subscriptions.getSubscriptionForUser(this.broadcasterId, user.id);
-        console.log('Subscription data for', username, ':', subscription);
-        if (subscription) {
-          isSubscribed = true;
-          // Get subscription tier (1000 = Tier 1, 2000 = Tier 2, 3000 = Tier 3)
-          const tier = subscription.tier;
-          subscriptionTier = tier === '3000' ? 'Tier 3' : tier === '2000' ? 'Tier 2' : 'Tier 1';
-        }
-      } catch (err) {
-        // User is not subscribed or we don't have permission to check
-        console.log('Subscription check failed for', username, ':', err);
-        isSubscribed = false;
-        subscriptionTier = 'None';
       }
 
       // Check follow status
@@ -335,46 +405,7 @@ export class TwitchChatService {
           followingSince = follow.data[0].followDate;
         }
       } catch (err) {
-        console.log('Follow check failed for', username, ':', err);
-      }
-
-      // Check VIP status
-      let isVip = false;
-      try {
-        const vips = await this.apiClient.channels.getVips(this.broadcasterId);
-        isVip = vips.data.some(vip => vip.id === user.id);
-      } catch (err) {
-        console.log('VIP check failed for', username, ':', err);
-      }
-
-      // Check mod status
-      let isMod = false;
-      try {
-        const mods = await this.apiClient.moderation.getModerators(this.broadcasterId);
-        isMod = mods.data.some(mod => mod.userId === user.id);
-      } catch (err) {
-        console.log('Mod check failed for', username, ':', err);
-      }
-
-      // Check ban/timeout status
-      let isBanned = false;
-      let isTimedOut = false;
-      let timeoutExpiresAt: Date | null = null;
-      try {
-        const bans = await this.apiClient.moderation.getBannedUsers(this.broadcasterId, { userId: user.id });
-        if (bans.data.length > 0) {
-          const ban = bans.data[0];
-          if (ban.expiryDate) {
-            // Has expiry date means it's a timeout
-            isTimedOut = ban.expiryDate > new Date();
-            timeoutExpiresAt = ban.expiryDate;
-          } else {
-            // No expiry date means permanent ban
-            isBanned = true;
-          }
-        }
-      } catch (err) {
-        console.log('Ban check failed for', username, ':', err);
+        console.log('Follow check failed for', userId, ':', err);
       }
 
       return {
@@ -382,15 +413,8 @@ export class TwitchChatService {
         displayName: user.displayName,
         profileImageUrl: user.profilePictureUrl,
         createdAt: user.creationDate,
-        isSubscribed,
-        subscriptionTier,
         followingSince,
-        isVip,
-        isMod,
         isBroadcaster: user.id === this.broadcasterId,
-        isBanned,
-        isTimedOut,
-        timeoutExpiresAt
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);

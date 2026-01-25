@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import './ChatMessage.css'
 import { getEmoteUrl, parseMessageWithEmotes } from '../utils/emoteParser'
 import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
+import type { TwitchChatService } from '../services/TwitchChatService'
+import { UserCard } from './UserCard'
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -10,9 +13,9 @@ interface ChatMessageProps {
   readMessageBackgroundColor: string
   allMessages: ChatMessageType[]
   onMarkAsRead: (id: string) => void
-  onUsernameClick: (username: string, e: React.MouseEvent) => void
   onContextMenu: (e: React.MouseEvent, messageId: string) => void
   isContextMenuOpen: boolean
+  chatService: TwitchChatService
 }
 
 export function ChatMessage({
@@ -22,10 +25,19 @@ export function ChatMessage({
   readMessageBackgroundColor,
   allMessages,
   onMarkAsRead,
-  onUsernameClick,
   onContextMenu,
-  isContextMenuOpen
+  isContextMenuOpen,
+  chatService
 }: ChatMessageProps) {
+  const [showUserCard, setShowUserCard] = useState(false)
+  const [userCardPosition, setUserCardPosition] = useState<{ x: number; y: number } | null>(null)
+
+  const handleUsernameClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowUserCard(true)
+    setUserCardPosition({ x: e.clientX, y: e.clientY })
+  }
+
   return (
     <div 
       key={msg.id} 
@@ -106,7 +118,7 @@ export function ChatMessage({
           <span 
             className="chat-username" 
             style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px`, cursor: 'pointer' }}
-            onClick={(e) => onUsernameClick(msg.displayName, e)}
+            onClick={handleUsernameClick}
           >
             {msg.displayName}
           </span>
@@ -156,6 +168,19 @@ export function ChatMessage({
           </span>
         </div>
       </div>
+      {showUserCard && (
+        <UserCard
+          username={msg.displayName}
+          userId={msg.userId}
+          chatService={chatService}
+          onClose={() => {
+            setShowUserCard(false)
+            setUserCardPosition(null)
+          }}
+          initialX={userCardPosition?.x}
+          initialY={userCardPosition?.y}
+        />
+      )}
     </div>
   )
 }

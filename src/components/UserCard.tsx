@@ -4,6 +4,7 @@ import { TwitchChatService } from '../services/TwitchChatService'
 
 interface UserCardProps {
     username: string
+    userId: string
     chatService: TwitchChatService
     onClose: () => void
     initialX?: number
@@ -12,6 +13,7 @@ interface UserCardProps {
 
 export function UserCard({
     username,
+    userId,
     chatService,
     onClose,
     initialX,
@@ -89,29 +91,38 @@ export function UserCard({
     useEffect(() => {
         const fetchUserInfo = async () => {
             setIsLoading(true)
-            const info = await chatService.getUserInfo(username)
-            if (info) {
+            // Fetch subscription info, ban info, VIPs and moderators lists using userId
+            const [info,subscriptionInfo, banInfo, vipIds, modIds] = await Promise.all([
+                chatService.getUserInfo(userId),
+                chatService.getUserSubscriptionInfo(userId),
+                chatService.getUserBanInfos(userId),
+                chatService.getVips(),
+                chatService.getModerators()
+            ])
+            
+            if (info)
+            {
                 setUserInfo({
-                    id: info.id,
+                    id: userId,
                     displayName: info.displayName,
                     profileImageUrl: info.profileImageUrl,
                     createdAt: info.createdAt,
-                    isSubscribed: info.isSubscribed,
-                    subscriptionTier: info.subscriptionTier,
+                    isSubscribed: subscriptionInfo.isSubscribed,
+                    subscriptionTier: subscriptionInfo.subscriptionTier,
                     followingSince: info.followingSince,
-                    isVip: info.isVip,
-                    isMod: info.isMod,
+                    isVip: vipIds.includes(userId),
+                    isMod: modIds.includes(userId),
                     isBroadcaster: info.isBroadcaster,
-                    isBanned: info.isBanned,
-                    isTimedOut: info.isTimedOut,
-                    timeoutExpiresAt: info.timeoutExpiresAt
+                    isBanned: banInfo.isBanned,
+                    isTimedOut: banInfo.isTimedOut,
+                    timeoutExpiresAt: banInfo.timeoutExpiresAt
                 })
             }
             setIsLoading(false)
         }
 
         fetchUserInfo()
-    }, [username, chatService])
+    }, [username, userId, chatService])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (cardRef.current) {
