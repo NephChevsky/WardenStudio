@@ -100,7 +100,7 @@ body {
 
 .channel-info {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.5rem;
 }
 
@@ -109,12 +109,14 @@ body {
   font-weight: 600;
   color: #adadb8;
   letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .channel-name {
   font-size: calc(var(--base-font-size, 13px) * 1.07);
   font-weight: 600;
   color: #efeff1;
+  line-height: 1;
 }
 
 .header-actions {
