@@ -4,7 +4,6 @@ import { getEmoteUrl, parseMessageWithEmotes } from '../utils/emoteParser'
 import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
 import type { TwitchChatService } from '../services/TwitchChatService'
-import { UserCard } from './UserCard'
 import { useChatStore } from '../store/chatStore'
 
 interface ChatMessageProps {
@@ -16,6 +15,7 @@ interface ChatMessageProps {
   onContextMenu: (e: React.MouseEvent, messageId: string) => void
   isContextMenuOpen: boolean
   chatService: TwitchChatService
+  onUsernameClick: (username: string, userId: string, x: number, y: number) => void
 }
 
 export function ChatMessage({
@@ -26,16 +26,14 @@ export function ChatMessage({
   onMarkAsRead,
   onContextMenu,
   isContextMenuOpen,
-  chatService
+  chatService,
+  onUsernameClick
 }: ChatMessageProps) {
-  const [showUserCard, setShowUserCard] = useState(false)
-  const [userCardPosition, setUserCardPosition] = useState<{ x: number; y: number } | null>(null)
   const getMessageById = useChatStore(state => state.getMessageById)
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setShowUserCard(true)
-    setUserCardPosition({ x: e.clientX, y: e.clientY })
+    onUsernameClick(msg.displayName, msg.userId, e.clientX, e.clientY)
   }
 
   return (
@@ -167,19 +165,6 @@ export function ChatMessage({
           </span>
         </div>
       </div>
-      {showUserCard && (
-        <UserCard
-          username={msg.displayName}
-          userId={msg.userId}
-          chatService={chatService}
-          onClose={() => {
-            setShowUserCard(false)
-            setUserCardPosition(null)
-          }}
-          initialX={userCardPosition?.x}
-          initialY={userCardPosition?.y}
-        />
-      )}
     </div>
   )
 }

@@ -90,6 +90,7 @@ export function UserCard({
 
     useEffect(() => {
         const fetchUserInfo = async () => {
+            setUserInfo(null)
             setIsLoading(true)
             // Fetch subscription info, ban info, VIPs and moderators lists using userId
             const [info,subscriptionInfo, banInfo, vipIds, modIds] = await Promise.all([
@@ -225,8 +226,7 @@ export function UserCard({
                 left: `${position.x}px`,
                 top: `${position.y}px`,
                 cursor: isDragging ? 'grabbing' : 'default'
-            }}
-        >
+            }}>
             <div className="user-card-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab' }}>
                 <h3>{userInfo?.displayName || username}</h3>
                 <button className="user-card-close" onClick={onClose}>

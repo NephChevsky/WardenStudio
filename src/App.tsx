@@ -9,6 +9,7 @@ import { UpdateNotification } from './components/UpdateNotification'
 import { Settings } from './components/Settings'
 import { ContextMenu } from './components/ContextMenu'
 import { ChatMessage } from './components/ChatMessage'
+import { UserCard } from './components/UserCard'
 
 function App() {
   // Zustand stores
@@ -65,6 +66,7 @@ function App() {
   const [showAutocomplete, setShowAutocomplete] = useState(false)
   const [chatters, setChatters] = useState<string[]>([])
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string; username: string; userId: string } | null>(null)
+  const [userCardInfo, setUserCardInfo] = useState<{ username: string; userId: string; x: number; y: number } | null>(null)
 
   // Refs
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
@@ -329,6 +331,10 @@ function App() {
     }
   }
 
+  const handleUsernameClick = (username: string, userId: string, x: number, y: number) => {
+    setUserCardInfo({ username, userId, x, y })
+  }
+
   const handleDeleteMessage = async () => {
     if (contextMenu) {
       // Call Twitch API to delete the message
@@ -468,6 +474,7 @@ function App() {
                 onContextMenu={handleContextMenu}
                 isContextMenuOpen={contextMenu !== null}
                 chatService={chatServiceRef.current}
+                onUsernameClick={handleUsernameClick}
               />
             );
           })}
@@ -540,6 +547,17 @@ function App() {
           onTimeoutUser={handleTimeoutUser}
           onBanUser={handleBanUser}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {userCardInfo && (
+        <UserCard
+          username={userCardInfo.username}
+          userId={userCardInfo.userId}
+          chatService={chatServiceRef.current}
+          onClose={() => setUserCardInfo(null)}
+          initialX={userCardInfo.x}
+          initialY={userCardInfo.y}
         />
       )}
 
