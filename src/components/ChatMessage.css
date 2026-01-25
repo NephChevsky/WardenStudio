@@ -21,8 +21,8 @@
 
 .chat-line.first-time-chatter {
   background: rgba(45, 113, 178, 0.15);
-  border-left: 2px solid #2d71b2;
-  padding-left: calc(1rem - 2px);
+  border-left: 3px solid #2d71b2;
+  padding-left: calc(1rem - 3px);
 }
 
 .chat-line.first-time-chatter:hover {
@@ -34,7 +34,6 @@
   align-items: center;
   gap: calc(var(--base-font-size, 13px) * 0.25);
   padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
-  background: #2d71b2;
   border-radius: 3px;
   font-size: calc(var(--base-font-size, 13px) * 0.85);
   font-weight: 600;
@@ -51,7 +50,7 @@
 /* Returning Chatter */
 .chat-line.returning-chatter {
   background: rgba(101, 84, 192, 0.12);
-  border-left: 3px solid #6554c0;
+  border-left: 2px solid #6554c0;
   padding-left: calc(1rem - 2px);
 }
 
