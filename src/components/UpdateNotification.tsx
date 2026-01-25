@@ -10,40 +10,35 @@ export function UpdateNotification() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (!window.ipcRenderer) return;
+    if (!window.electron?.updater) return;
 
-    // Listen for update events
-    const handleUpdateAvailable = (_event: any, info: UpdateInfo) => {
+    // Listen for update events using the new secure API
+    const cleanupAvailable = window.electron.updater.onUpdateAvailable((info: UpdateInfo) => {
       setUpdateAvailable(info);
       setDismissed(false);
-    };
+    });
 
-    const handleUpdateProgress = (_event: any, progress: UpdateProgress) => {
+    const cleanupProgress = window.electron.updater.onUpdateProgress((progress: UpdateProgress) => {
       setDownloadProgress(progress);
-    };
+    });
 
-    const handleUpdateDownloaded = (_event: any) => {
+    const cleanupDownloaded = window.electron.updater.onUpdateDownloaded(() => {
       setDownloading(false);
       setReadyToInstall(true);
       setDownloadProgress(null);
-    };
+    });
 
-    const handleUpdateError = (_event: any, errorMessage: string) => {
+    const cleanupError = window.electron.updater.onUpdateError((errorMessage: string) => {
       setError(errorMessage);
       setDownloading(false);
       setDownloadProgress(null);
-    };
-
-    window.ipcRenderer.on('update-available', handleUpdateAvailable);
-    window.ipcRenderer.on('update-progress', handleUpdateProgress);
-    window.ipcRenderer.on('update-downloaded', handleUpdateDownloaded);
-    window.ipcRenderer.on('update-error', handleUpdateError);
+    });
 
     return () => {
-      window.ipcRenderer?.off('update-available', handleUpdateAvailable);
-      window.ipcRenderer?.off('update-progress', handleUpdateProgress);
-      window.ipcRenderer?.off('update-downloaded', handleUpdateDownloaded);
-      window.ipcRenderer?.off('update-error', handleUpdateError);
+      cleanupAvailable();
+      cleanupProgress();
+      cleanupDownloaded();
+      cleanupError();
     };
   }, []);
 

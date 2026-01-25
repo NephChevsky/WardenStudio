@@ -105,7 +105,7 @@ function App() {
     validateAuth();
 
     // Listen for OAuth callback from Electron
-    const handleOAuthCallback = async (_event: any, urlString: string) => {
+    const handleOAuthCallback = async (urlString: string) => {
       console.log('OAuth callback received:', urlString);
       try {
         const token = await oauthServiceRef.current.parseTokenFromUrl(urlString);
@@ -123,15 +123,16 @@ function App() {
       }
     };
 
-    // Check if window.ipcRenderer exists (Electron environment)
-    if (window.ipcRenderer) {
-      window.ipcRenderer.on('oauth-callback', handleOAuthCallback);
+    // Check if window.electron exists (Electron environment)
+    let cleanup: (() => void) | undefined;
+    if (window.electron?.onOAuthCallback) {
+      cleanup = window.electron.onOAuthCallback(handleOAuthCallback);
     }
 
     // Cleanup
     return () => {
-      if (window.ipcRenderer) {
-        window.ipcRenderer.off('oauth-callback', handleOAuthCallback);
+      if (cleanup) {
+        cleanup();
       }
     };
   }, [loadFromDatabase, setAuthenticated, setLoading, loadSettings])

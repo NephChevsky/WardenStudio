@@ -1,24 +1,21 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
-// --------- Expose some API to the Renderer process ---------
-contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
-  },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
-  },
-})
+// Whitelist of allowed IPC channels for security
+const ALLOWED_CHANNELS = {
+  // OAuth channels
+  OAUTH_CALLBACK: 'oauth-callback',
+  // Main process message
+  MAIN_PROCESS_MESSAGE: 'main-process-message',
+  // Updater channels
+  UPDATE_AVAILABLE: 'update-available',
+  UPDATE_PROGRESS: 'update-progress',
+  UPDATE_DOWNLOADED: 'update-downloaded',
+  UPDATE_ERROR: 'update-error',
+} as const
+
+// --------- Expose specific APIs to the Renderer process ---------
+// Note: We expose only specific, whitelisted methods instead of the entire ipcRenderer
+// to prevent arbitrary IPC calls which could be a security vulnerability
 
 // Expose secure storage API via IPC to main process
 contextBridge.exposeInMainWorld('electron', {
@@ -75,5 +72,43 @@ contextBridge.exposeInMainWorld('electron', {
     downloadUpdate: () => ipcRenderer.invoke('download-update'),
     installUpdate: () => ipcRenderer.invoke('install-update'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    onUpdateAvailable: (callback: (info: any) => void) => {
+      const listener = (_event: any, info: any) => callback(info)
+      ipcRenderer.on(ALLOWED_CHANNELS.UPDATE_AVAILABLE, listener)
+      return () => ipcRenderer.removeListener(ALLOWED_CHANNELS.UPDATE_AVAILABLE, listener)
+    },
+    onUpdateProgress: (callback: (progress: any) => void) => {
+      const listener = (_event: any, progress: any) => callback(progress)
+      ipcRenderer.on(ALLOWED_CHANNELS.UPDATE_PROGRESS, listener)
+      return () => ipcRenderer.removeListener(ALLOWED_CHANNELS.UPDATE_PROGRESS, listener)
+    },
+    onUpdateDownloaded: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on(ALLOWED_CHANNELS.UPDATE_DOWNLOADED, listener)
+      return () => ipcRenderer.removeListener(ALLOWED_CHANNELS.UPDATE_DOWNLOADED, listener)
+    },
+    onUpdateError: (callback: (error: string) => void) => {
+      const listener = (_event: any, error: string) => callback(error)
+      ipcRenderer.on(ALLOWED_CHANNELS.UPDATE_ERROR, listener)
+      return () => ipcRenderer.removeListener(ALLOWED_CHANNELS.UPDATE_ERROR, listener)
+    },
+  },
+  // OAuth callback listener
+  onOAuthCallback: (callback: (url: string) => void) => {
+    const listener = (_event: any, url: string) => callback(url)
+    ipcRenderer.on(ALLOWED_CHANNELS.OAUTH_CALLBACK, listener)
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener(ALLOWED_CHANNELS.OAUTH_CALLBACK, listener)
+    }
+  },
+  // Main process message listener
+  onMainProcessMessage: (callback: (message: string) => void) => {
+    const listener = (_event: any, message: string) => callback(message)
+    ipcRenderer.on(ALLOWED_CHANNELS.MAIN_PROCESS_MESSAGE, listener)
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener(ALLOWED_CHANNELS.MAIN_PROCESS_MESSAGE, listener)
+    }
   },
 })

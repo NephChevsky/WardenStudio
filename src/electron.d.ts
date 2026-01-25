@@ -17,6 +17,10 @@ export interface Updater {
   downloadUpdate(): Promise<boolean>;
   installUpdate(): void;
   getAppVersion(): Promise<string>;
+  onUpdateAvailable(callback: (info: UpdateInfo) => void): () => void;
+  onUpdateProgress(callback: (progress: UpdateProgress) => void): () => void;
+  onUpdateDownloaded(callback: () => void): () => void;
+  onUpdateError(callback: (error: string) => void): () => void;
 }
 
 export interface Viewer {
@@ -53,11 +57,12 @@ export interface UpdateProgress {
 
 declare global {
   interface Window {
-    ipcRenderer?: IpcRenderer;
     electron?: {
       store: SecureStore;
       database: Database;
       updater: Updater;
+      onOAuthCallback: (callback: (url: string) => void) => () => void;
+      onMainProcessMessage: (callback: (message: string) => void) => () => void;
     };
   }
 }
