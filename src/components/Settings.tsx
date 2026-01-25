@@ -91,7 +91,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
         <div className="settings-content">
           <div className="setting-group">
             <label htmlFor="font-size" className="setting-label">
-              Chat Font Size
+              Font Size
             </label>
             <div className="setting-control">
               <input 
@@ -107,7 +107,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               <span className="setting-value">{tempFontSize}px</span>
             </div>
             <p className="setting-description">
-              Adjust the size of chat messages
+              Adjust the font size of all text in the UI
             </p>
           </div>
 

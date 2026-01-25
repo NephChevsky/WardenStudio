@@ -433,7 +433,7 @@ function App() {
   }
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" style={{ '--base-font-size': `${fontSize}px` } as React.CSSProperties}>
       <UpdateNotification />
       <div className="chat-header">
         <div className="channel-info">
@@ -468,12 +468,10 @@ function App() {
                 key={msg.id}
                 message={msg}
                 isRead={isRead}
-                fontSize={fontSize}
                 readMessageBackgroundColor={getReadMessageColorWithAlpha()}
                 onMarkAsRead={markAsRead}
                 onContextMenu={handleContextMenu}
                 isContextMenuOpen={contextMenu !== null}
-                chatService={chatServiceRef.current}
                 onUsernameClick={handleUsernameClick}
               />
             );

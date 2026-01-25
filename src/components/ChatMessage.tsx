@@ -1,32 +1,26 @@
-import { useState } from 'react'
 import './ChatMessage.css'
 import { getEmoteUrl, parseMessageWithEmotes } from '../utils/emoteParser'
 import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
-import type { TwitchChatService } from '../services/TwitchChatService'
 import { useChatStore } from '../store/chatStore'
 
 interface ChatMessageProps {
   message: ChatMessageType
   isRead: boolean
-  fontSize: number
   readMessageBackgroundColor: string
   onMarkAsRead: (id: string) => void
   onContextMenu: (e: React.MouseEvent, messageId: string) => void
   isContextMenuOpen: boolean
-  chatService: TwitchChatService
   onUsernameClick: (username: string, userId: string, x: number, y: number) => void
 }
 
 export function ChatMessage({
   message: msg,
   isRead,
-  fontSize,
   readMessageBackgroundColor,
   onMarkAsRead,
   onContextMenu,
   isContextMenuOpen,
-  chatService,
   onUsernameClick
 }: ChatMessageProps) {
   const getMessageById = useChatStore(state => state.getMessageById)
@@ -114,13 +108,13 @@ export function ChatMessage({
 
           <span 
             className="chat-username" 
-            style={{ color: msg.color || '#9147ff', fontSize: `${fontSize}px`, cursor: 'pointer' }}
+            style={{ color: msg.color || '#9147ff', cursor: 'pointer' }}
             onClick={handleUsernameClick}
           >
             {msg.displayName}
           </span>
-          <span className="chat-colon" style={{ fontSize: `${fontSize}px` }}>:</span>
-          <span className="chat-message" style={{ fontSize: `${fontSize}px` }}>
+          <span className="chat-colon">:</span>
+          <span className="chat-message">
             {(() => {
               // Parse emoteOffsets from JSON string if available
               let emoteOffsets: Map<string, string[]> | undefined;
