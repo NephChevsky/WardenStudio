@@ -21,7 +21,6 @@ export interface DbChatMessage {
   isHighlighted: boolean;
   isCheer: boolean;
   bits?: number;
-  isReply: boolean;
   replyParentMessageId?: string;
   emoteOffsets?: string;
 }
@@ -77,7 +76,6 @@ class DatabaseService {
         isHighlighted INTEGER NOT NULL DEFAULT 0,
         isCheer INTEGER NOT NULL DEFAULT 0,
         bits INTEGER,
-        isReply INTEGER NOT NULL DEFAULT 0,
         replyParentMessageId TEXT,
         emoteOffsets TEXT
       )
@@ -131,11 +129,11 @@ class DatabaseService {
       INSERT INTO messages (
         id, userId, message, timestamp, color, badges,
         isFirstMessage,
-        isReturningChatter, isHighlighted, isCheer, bits, isReply,
+        isReturningChatter, isHighlighted, isCheer, bits,
         replyParentMessageId, emoteOffsets
       )
       VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
       ON CONFLICT(id) DO NOTHING
     `);
@@ -152,7 +150,6 @@ class DatabaseService {
       message.isHighlighted ? 1 : 0,
       message.isCheer ? 1 : 0,
       message.bits || null,
-      message.isReply ? 1 : 0,
       message.replyParentMessageId || null,
       message.emoteOffsets || null
     );
@@ -218,10 +215,6 @@ class DatabaseService {
       fields.push('bits = ?');
       values.push(updates.bits || null);
     }
-    if (updates.isReply !== undefined) {
-      fields.push('isReply = ?');
-      values.push(updates.isReply ? 1 : 0);
-    }
     if (updates.replyParentMessageId !== undefined) {
       fields.push('replyParentMessageId = ?');
       values.push(updates.replyParentMessageId || null);
@@ -257,7 +250,6 @@ class DatabaseService {
         m.isHighlighted,
         m.isCheer,
         m.bits,
-        m.isReply,
         m.replyParentMessageId,
         m.emoteOffsets
       FROM messages m
@@ -283,7 +275,6 @@ class DatabaseService {
       isHighlighted: row.isHighlighted === 1,
       isCheer: row.isCheer === 1,
       bits: row.bits || undefined,
-      isReply: row.isReply === 1,
       replyParentMessageId: row.replyParentMessageId || undefined,
       emoteOffsets: row.emoteOffsets || undefined,
     }));

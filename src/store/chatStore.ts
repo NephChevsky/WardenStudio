@@ -18,6 +18,7 @@ interface ChatStore {
   markAllAsRead: () => void;
   setShouldScrollToBottom: (should: boolean) => void;
   loadFromDatabase: () => void;
+  getMessageById: (messageId: string) => ChatMessage | undefined;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -121,7 +122,6 @@ export const useChatStore = create<ChatStore>((set) => ({
           isHighlighted: msg.isHighlighted || false,
           isCheer: msg.isCheer || false,
           bits: msg.bits,
-          isReply: msg.isReply || false,
           replyParentMessageId: msg.replyParentMessageId,
           emoteOffsets: msg.emoteOffsets,
         }));
@@ -137,5 +137,10 @@ export const useChatStore = create<ChatStore>((set) => ({
     } catch (err) {
       console.error('Failed to load messages from database:', err);
     }
+  },
+
+  getMessageById: (messageId) => {
+    const state = useChatStore.getState();
+    return state.messages.find(msg => msg.id === messageId);
   },
 }));

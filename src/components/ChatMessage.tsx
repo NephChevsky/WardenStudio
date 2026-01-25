@@ -5,13 +5,13 @@ import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
 import type { TwitchChatService } from '../services/TwitchChatService'
 import { UserCard } from './UserCard'
+import { useChatStore } from '../store/chatStore'
 
 interface ChatMessageProps {
   message: ChatMessageType
   isRead: boolean
   fontSize: number
   readMessageBackgroundColor: string
-  allMessages: ChatMessageType[]
   onMarkAsRead: (id: string) => void
   onContextMenu: (e: React.MouseEvent, messageId: string) => void
   isContextMenuOpen: boolean
@@ -23,7 +23,6 @@ export function ChatMessage({
   isRead,
   fontSize,
   readMessageBackgroundColor,
-  allMessages,
   onMarkAsRead,
   onContextMenu,
   isContextMenuOpen,
@@ -31,6 +30,7 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const [showUserCard, setShowUserCard] = useState(false)
   const [userCardPosition, setUserCardPosition] = useState<{ x: number; y: number } | null>(null)
+  const getMessageById = useChatStore(state => state.getMessageById)
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -78,17 +78,15 @@ export function ChatMessage({
             <span>Highlighted Message</span>
           </div>
         )}
-        {msg.isReply && msg.replyParentDisplayName && (() => {
-          const parentMessage = msg.replyParentMessageId 
-            ? allMessages.find(m => m.id === msg.replyParentMessageId)
-            : null;
-          const parentText = parentMessage?.message || msg.replyParentMessage || '';
+        {msg.replyParentMessageId && (() => {
+          const parentMessage = getMessageById(msg.replyParentMessageId);
+          if (!parentMessage) return null;
           return (
             <div className="reply-thread">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M8 12l-4-4 4-4v2.5c5 0 8.5 1.5 11 5-1.5-4.5-5-6.5-11-6.5V8z"/>
               </svg>
-              <span className="reply-text">Replying to @{msg.replyParentDisplayName}: {parentText}</span>
+              <span className="reply-text">Replying to @{parentMessage.displayName}: {parentMessage.message}</span>
             </div>
           );
         })()}

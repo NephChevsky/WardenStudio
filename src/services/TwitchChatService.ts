@@ -17,10 +17,7 @@ export interface ChatMessage {
   isHighlighted: boolean; // Message highlighted by sender (paid feature)
   isCheer: boolean; // Message contains bits/cheers
   bits?: number; // Amount of bits if isCheer is true
-  isReply: boolean; // Message is a reply to another message
   replyParentMessageId?: string; // ID of message being replied to
-  replyParentDisplayName?: string; // Display name of user being replied to
-  replyParentMessage?: string; // Text of the message being replied to
   emoteOffsets?: string; // Serialized emote offset data for parsing
   isRead?: boolean;
   isDeleted?: boolean; // Message has been deleted by user
@@ -150,10 +147,7 @@ export class TwitchChatService {
           isHighlighted: msg.isHighlight ?? false,
           isCheer: msg.isCheer ?? false,
           bits: msg.bits,
-          isReply: msg.isReply ?? false,
           replyParentMessageId: msg.parentMessageId ?? undefined,
-          replyParentDisplayName: msg.parentMessageUserDisplayName ?? undefined,
-          replyParentMessage: msg.parentMessageText ?? undefined,
           emoteOffsets: msg.emoteOffsets && msg.emoteOffsets.size > 0 ? (() => {
             const emoteOffsetsObj: Record<string, string[]> = {};
             msg.emoteOffsets.forEach((positions, id) => {
@@ -188,7 +182,6 @@ export class TwitchChatService {
                   isHighlighted: msg.isHighlight ?? false,
                   isCheer: msg.isCheer ?? false,
                   bits: msg.bits,
-                  isReply: msg.isReply ?? false,
                   replyParentMessageId: msg.parentMessageId ?? undefined,
                   emoteOffsets: chatMessage.emoteOffsets,
                 });
@@ -213,7 +206,7 @@ export class TwitchChatService {
       }
     });
 
-    await this.chatClient.connect();
+    this.chatClient.connect();
   }
 
   onMessage(callback: (message: ChatMessage) => void) {
@@ -250,7 +243,6 @@ export class TwitchChatService {
         isReturningChatter: false,
         isHighlighted: false,
         isCheer: false,
-        isReply: false,
       };
 
       // Save message to database

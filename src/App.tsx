@@ -464,7 +464,6 @@ function App() {
                 isRead={isRead}
                 fontSize={fontSize}
                 readMessageBackgroundColor={getReadMessageColorWithAlpha()}
-                allMessages={messages}
                 onMarkAsRead={markAsRead}
                 onContextMenu={handleContextMenu}
                 isContextMenuOpen={contextMenu !== null}
