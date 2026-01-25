@@ -29,19 +29,18 @@ if (fs.existsSync('.env')) {
     hasIssues = true;
   }
   
-  if (envContent.includes('VITE_ENCRYPTION_KEY=') && 
-      !envContent.includes('VITE_ENCRYPTION_KEY=your_encryption_key_here') &&
-      envContent.match(/VITE_ENCRYPTION_KEY=([a-f0-9]{64})/)) {
-    console.log('   ✅ VITE_ENCRYPTION_KEY is set and appears valid');
+  // Note: VITE_ENCRYPTION_KEY is no longer required!
+  // Encryption keys are now managed securely by the OS keychain
+  if (envContent.includes('VITE_ENCRYPTION_KEY=')) {
+    console.log('   ℹ️  VITE_ENCRYPTION_KEY found in .env (no longer needed)');
+    console.log('      → The app now uses OS-level keychain for encryption keys');
+    console.log('      → You can safely remove this from .env');
   } else {
-    console.log('   ❌ VITE_ENCRYPTION_KEY is not properly configured');
-    console.log('      → Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
-    hasIssues = true;
+    console.log('   ✅ No VITE_ENCRYPTION_KEY in .env (using OS keychain instead)');
   }
   
   // Check for placeholder values
-  if (envContent.includes('your_client_id_here') || 
-      envContent.includes('your_encryption_key_here')) {
+  if (envContent.includes('your_client_id_here')) {
     console.log('\n   ⚠️  WARNING: Placeholder values detected in .env');
     console.log('      Replace them with actual values before running the app');
     hasIssues = true;

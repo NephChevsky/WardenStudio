@@ -41,7 +41,6 @@ jobs:
         run: npm run electron:publish
         env:
           VITE_TWITCH_CLIENT_ID: ${{ secrets.VITE_TWITCH_CLIENT_ID }}
-          VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload build artifacts

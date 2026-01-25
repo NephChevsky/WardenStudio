@@ -6,6 +6,7 @@ import { setupAutoUpdater } from './updater'
 import Store from 'electron-store'
 import log from 'electron-log'
 import { databaseService } from './database'
+import { getOrCreateEncryptionKey } from './keychain'
 
 // Configure logging
 log.transports.file.level = 'info'
@@ -13,28 +14,34 @@ log.info('Application starting...')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// Initialize encrypted store in main process
-// IMPORTANT: VITE_ENCRYPTION_KEY must be set via environment variable or .env file
-// Never use a hardcoded fallback in production!
-const encryptionKey = process.env.VITE_ENCRYPTION_KEY
-log.info('Encryption key status:', encryptionKey ? 'SET' : 'NOT SET')
-if (!encryptionKey) {
-  log.error('ERROR: VITE_ENCRYPTION_KEY environment variable is not set!')
-  log.error('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VITE')))
-  app.quit()
-}
+// Encryption key and store will be initialized after app is ready
+// This is because safeStorage API is only available after app.ready event
 let store: Store
-try {
-  log.info('Initializing secure store...')
-  store = new Store({
-    name: 'warden-studio-secure',
-    encryptionKey: encryptionKey,
-    clearInvalidConfig: true, // Clear corrupted config on startup
-  })
-  log.info('Secure store initialized successfully')
-} catch (error) {
-  log.error('Failed to initialize store:', error)
-  throw error
+let encryptionKey: string
+
+/**
+ * Initialize the encrypted store using OS keychain for key storage
+ * This must be called after app.ready because safeStorage requires it
+ */
+function initializeSecureStore() {
+  try {
+    log.info('Initializing secure store with OS keychain...')
+    
+    // Get encryption key from OS keychain (or create new one if doesn't exist)
+    encryptionKey = getOrCreateEncryptionKey()
+    
+    // Initialize electron-store with the encryption key
+    store = new Store({
+      name: 'warden-studio-secure',
+      encryptionKey: encryptionKey,
+      clearInvalidConfig: true, // Clear corrupted config on startup
+    })
+    
+    log.info('Secure store initialized successfully with OS keychain encryption')
+  } catch (error) {
+    log.error('Failed to initialize secure store:', error)
+    throw error
+  }
 }
 
 // Setup IPC handlers for secure storage
@@ -288,6 +295,9 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     log.info('App is ready, initializing...')
     try {
+      // Initialize secure store with OS keychain (must be after app.ready)
+      initializeSecureStore()
+      
       // Initialize database
       databaseService.initialize()
       log.info('Database initialized successfully')
