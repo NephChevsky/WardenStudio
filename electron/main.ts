@@ -122,10 +122,8 @@ const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 // Create a local HTTP server for OAuth callback
 function createOAuthServer() {
   oauthServer = createServer((req, res) => {
-    // Add CORS headers for any requests
     res.writeHead(200, { 
       'Content-Type': 'text/html',
-      'Access-Control-Allow-Origin': '*',
     })
     
     // Check if this is a token submission
