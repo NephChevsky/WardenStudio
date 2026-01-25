@@ -51,7 +51,7 @@
 /* Returning Chatter */
 .chat-line.returning-chatter {
   background: rgba(101, 84, 192, 0.12);
-  border-left: 2px solid #6554c0;
+  border-left: 3px solid #6554c0;
   padding-left: calc(1rem - 2px);
 }
 
