@@ -19,7 +19,6 @@ export interface DbChatMessage {
   isFirstMessage: boolean;
   isReturningChatter: boolean;
   isHighlighted: boolean;
-  isCheer: boolean;
   bits?: number;
   replyParentMessageId?: string;
   emoteOffsets?: string;
@@ -74,7 +73,6 @@ class DatabaseService {
         isFirstMessage INTEGER NOT NULL DEFAULT 0,
         isReturningChatter INTEGER NOT NULL DEFAULT 0,
         isHighlighted INTEGER NOT NULL DEFAULT 0,
-        isCheer INTEGER NOT NULL DEFAULT 0,
         bits INTEGER,
         replyParentMessageId TEXT,
         emoteOffsets TEXT
@@ -129,11 +127,11 @@ class DatabaseService {
       INSERT INTO messages (
         id, userId, message, timestamp, color, badges,
         isFirstMessage,
-        isReturningChatter, isHighlighted, isCheer, bits,
+        isReturningChatter, isHighlighted, bits,
         replyParentMessageId, emoteOffsets
       )
       VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
       ON CONFLICT(id) DO NOTHING
     `);
@@ -148,7 +146,6 @@ class DatabaseService {
       message.isFirstMessage ? 1 : 0,
       message.isReturningChatter ? 1 : 0,
       message.isHighlighted ? 1 : 0,
-      message.isCheer ? 1 : 0,
       message.bits || null,
       message.replyParentMessageId || null,
       message.emoteOffsets || null
@@ -207,10 +204,6 @@ class DatabaseService {
       fields.push('isHighlighted = ?');
       values.push(updates.isHighlighted ? 1 : 0);
     }
-    if (updates.isCheer !== undefined) {
-      fields.push('isCheer = ?');
-      values.push(updates.isCheer ? 1 : 0);
-    }
     if (updates.bits !== undefined) {
       fields.push('bits = ?');
       values.push(updates.bits || null);
@@ -248,7 +241,6 @@ class DatabaseService {
         m.isFirstMessage,
         m.isReturningChatter,
         m.isHighlighted,
-        m.isCheer,
         m.bits,
         m.replyParentMessageId,
         m.emoteOffsets
@@ -273,7 +265,6 @@ class DatabaseService {
       isFirstMessage: row.isFirstMessage === 1,
       isReturningChatter: row.isReturningChatter === 1,
       isHighlighted: row.isHighlighted === 1,
-      isCheer: row.isCheer === 1,
       bits: row.bits || undefined,
       replyParentMessageId: row.replyParentMessageId || undefined,
       emoteOffsets: row.emoteOffsets || undefined,

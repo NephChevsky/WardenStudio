@@ -15,8 +15,7 @@ export interface ChatMessage {
   isFirstMessage: boolean;
   isReturningChatter: boolean; // User returning after being away
   isHighlighted: boolean; // Message highlighted by sender (paid feature)
-  isCheer: boolean; // Message contains bits/cheers
-  bits?: number; // Amount of bits if isCheer is true
+  bits?: number; // Amount of bits (cheer message)
   replyParentMessageId?: string; // ID of message being replied to
   emoteOffsets?: string; // Serialized emote offset data for parsing
   isRead?: boolean;
@@ -145,7 +144,6 @@ export class TwitchChatService {
           isFirstMessage: msg.isFirst ?? false,
           isReturningChatter: msg.isReturningChatter ?? false,
           isHighlighted: msg.isHighlight ?? false,
-          isCheer: msg.isCheer ?? false,
           bits: msg.bits,
           replyParentMessageId: msg.parentMessageId ?? undefined,
           emoteOffsets: msg.emoteOffsets && msg.emoteOffsets.size > 0 ? (() => {
@@ -180,7 +178,6 @@ export class TwitchChatService {
                   isFirstMessage: msg.isFirst ?? false,
                   isReturningChatter: msg.isReturningChatter ?? false,
                   isHighlighted: msg.isHighlight ?? false,
-                  isCheer: msg.isCheer ?? false,
                   bits: msg.bits,
                   replyParentMessageId: msg.parentMessageId ?? undefined,
                   emoteOffsets: chatMessage.emoteOffsets,
@@ -242,7 +239,6 @@ export class TwitchChatService {
         isFirstMessage: false,
         isReturningChatter: false,
         isHighlighted: false,
-        isCheer: false,
       };
 
       // Save message to database

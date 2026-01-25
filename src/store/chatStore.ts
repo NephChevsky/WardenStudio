@@ -21,7 +21,7 @@ interface ChatStore {
   getMessageById: (messageId: string) => ChatMessage | undefined;
 }
 
-export const useChatStore = create<ChatStore>((set) => ({
+export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   messageInput: '',
   isConnected: false,
@@ -120,7 +120,6 @@ export const useChatStore = create<ChatStore>((set) => ({
           isFirstMessage: msg.isFirstMessage || false,
           isReturningChatter: msg.isReturningChatter || false,
           isHighlighted: msg.isHighlighted || false,
-          isCheer: msg.isCheer || false,
           bits: msg.bits,
           replyParentMessageId: msg.replyParentMessageId,
           emoteOffsets: msg.emoteOffsets,
@@ -140,7 +139,6 @@ export const useChatStore = create<ChatStore>((set) => ({
   },
 
   getMessageById: (messageId) => {
-    const state = useChatStore.getState();
-    return state.messages.find(msg => msg.id === messageId);
+    return get().messages.find(msg => msg.id === messageId);
   },
 }));
