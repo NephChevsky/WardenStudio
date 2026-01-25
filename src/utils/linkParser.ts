@@ -15,7 +15,7 @@ export interface LinkPosition {
  * - Short URLs like google.fr, youtube.com, etc.
  * Matches pattern: word.word (x.y format) with optional protocol, www, and path
  */
-const URL_REGEX = /(https?:\/\/)?(www\.)?[a-zA-Z0-9][-a-zA-Z0-9@:%._\+~#=]*\.[a-zA-Z]{2,}(:[0-9]*)?/gi;
+const URL_REGEX = /(https?:\/\/)?(www\.)?[a-zA-Z0-9][-a-zA-Z0-9@:%._\+~#=]*\.[a-zA-Z]{2,}(:[0-9]*)?(\/\S*)?/gi;
 
 /**
  * Parse links from text and return their positions
