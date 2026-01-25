@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { TwitchChatService } from '../services/TwitchChatService';
+import { TwitchApiService } from '../services/TwitchApiService';
+import { TwitchEventSubService } from '../services/TwitchEventSubService';
 import type { ChatMessage } from '../services/TwitchChatService';
 
 interface UseChatServiceOptions {
@@ -19,7 +21,9 @@ export function useChatService({
   clientId,
   enabled,
 }: UseChatServiceOptions) {
-  const serviceRef = useRef<TwitchChatService>(new TwitchChatService());
+  const apiServiceRef = useRef<TwitchApiService>(new TwitchApiService());
+  const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService());
+  const eventSubServiceRef = useRef<TwitchEventSubService>(new TwitchEventSubService());
   const isConnectedRef = useRef(false);
 
   useEffect(() => {
@@ -27,23 +31,56 @@ export function useChatService({
       return;
     }
 
-    const service = serviceRef.current;
+    const apiService = apiServiceRef.current;
+    const chatService = chatServiceRef.current;
+    const eventSubService = eventSubServiceRef.current;
 
     // Register message handler only once
-    service.onMessage(onMessage);
-    
-    // Register message deleted handler if provided
-    if (onMessageDeleted) {
-      service.onMessageDeleted(onMessageDeleted);
-    }
+    chatService.onMessage(onMessage);
 
-    // Connect to chat
+    // Connect to all services
     const connect = async () => {
       try {
-        await service.connect(channel, accessToken, clientId);
+        // Initialize API service first
+        await apiService.initialize(channel, accessToken, clientId);
+
+        // Get necessary data from API service
+        const currentUser = apiService.getCurrentUser();
+        const broadcasterId = apiService.getBroadcasterId();
+
+        if (!currentUser || !broadcasterId) {
+          throw new Error('Failed to get user or broadcaster info');
+        }
+
+        // Initialize chat service with data from API service
+        await chatService.connect(
+          channel,
+          accessToken,
+          clientId,
+          currentUser.id,
+          currentUser.name,
+          currentUser.displayName,
+          currentUser.color,
+          broadcasterId
+        );
+
+        // Initialize EventSub service
+        const apiClient = apiService.getApiClient();
+        if (apiClient) {
+          await eventSubService.connect(apiClient, broadcasterId, currentUser.id);
+
+          // Register message deletion handler if provided
+          if (onMessageDeleted) {
+            eventSubService.onMessageDeleted((event) => {
+              console.log('Message deleted via EventSub:', event);
+              onMessageDeleted(event.messageId);
+            });
+          }
+        }
+
         isConnectedRef.current = true;
       } catch (error) {
-        console.error('Failed to connect to chat:', error);
+        console.error('Failed to connect services:', error);
         isConnectedRef.current = false;
         throw error;
       }
@@ -54,17 +91,20 @@ export function useChatService({
     // Cleanup on unmount or dependency change
     return () => {
       if (isConnectedRef.current) {
-        service.disconnect();
+        eventSubService.disconnect();
+        chatService.disconnect();
         isConnectedRef.current = false;
       }
     };
   }, [enabled, channel, accessToken, clientId]); // onMessage intentionally excluded to avoid re-connections
 
   return {
-    service: serviceRef.current,
+    apiService: apiServiceRef.current,
+    chatService: chatServiceRef.current,
+    eventSubService: eventSubServiceRef.current,
     sendMessage: async (message: string) => {
       if (isConnectedRef.current) {
-        await serviceRef.current.sendMessage(message);
+        await chatServiceRef.current.sendMessage(message);
       }
     },
   };

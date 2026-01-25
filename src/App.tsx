@@ -1,6 +1,8 @@
 import { useEffect, useRef, useLayoutEffect, useState } from 'react'
 import './App.css'
+import { TwitchApiService } from './services/TwitchApiService'
 import { TwitchChatService } from './services/TwitchChatService'
+import { TwitchEventSubService } from './services/TwitchEventSubService'
 import { TwitchOAuthService } from './services/TwitchOAuthService'
 import { useAuthStore } from './store/authStore'
 import { useChatStore } from './store/chatStore'
@@ -69,7 +71,9 @@ function App() {
   const [userCardInfo, setUserCardInfo] = useState<{ username: string; userId: string; x: number; y: number } | null>(null)
 
   // Refs
+  const apiServiceRef = useRef<TwitchApiService>(new TwitchApiService())
   const chatServiceRef = useRef<TwitchChatService>(new TwitchChatService())
+  const eventSubServiceRef = useRef<TwitchEventSubService>(new TwitchEventSubService())
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatMessagesRef = useRef<HTMLDivElement>(null)
   const oauthServiceRef = useRef<TwitchOAuthService>(
@@ -161,27 +165,13 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated || !authenticatedUser) return
 
-    const service = chatServiceRef.current
+    const apiService = apiServiceRef.current
+    const chatService = chatServiceRef.current
+    const eventSubService = eventSubServiceRef.current
     
     // Only register the message handler once
-    service.onMessage((message) => {
+    chatService.onMessage((message) => {
       addMessage(message);
-    });
-
-    // Register message deletion handler
-    service.onMessageDeleted(async (messageId) => {
-      debugger;
-      console.log('Message deleted event received:', messageId);
-      deleteMessage(messageId);
-      
-      // Update database to mark message as deleted
-      if (window.electron?.database) {
-        try {
-          await window.electron.database.markMessageAsDeleted(messageId);
-        } catch (err) {
-          console.error('Failed to mark message as deleted in database:', err);
-        }
-      }
     });
 
     // Auto-connect using OAuth token to the authenticated user's channel
@@ -191,19 +181,65 @@ function App() {
       const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
 
       if (channel && accessToken && clientId) {
-        service.connect(channel, accessToken, clientId)
-          .then(() => setConnected(true))
-          .catch(async (err) => {
-            console.error('Failed to connect:', err)
-            setError('Failed to connect to Twitch chat. Try logging in again.')
-            await oauthServiceRef.current.clearToken()
-            setAuthenticated(null)
-          })
+        try {
+          // Initialize API service first
+          await apiService.initialize(channel, accessToken, clientId)
+
+          // Get necessary data from API service
+          const currentUser = apiService.getCurrentUser()
+          const broadcasterId = apiService.getBroadcasterId()
+
+          if (!currentUser || !broadcasterId) {
+            throw new Error('Failed to get user or broadcaster info')
+          }
+
+          // Initialize chat service with data from API service
+          await chatService.connect(
+            channel,
+            accessToken,
+            clientId,
+            currentUser.id,
+            currentUser.name,
+            currentUser.displayName,
+            currentUser.color,
+            broadcasterId
+          )
+
+          setConnected(true)
+
+          // Initialize EventSub service independently
+          const apiClient = apiService.getApiClient()
+
+          if (apiClient) {
+            await eventSubService.connect(apiClient, broadcasterId, currentUser.id)
+
+            // Register message deletion handler
+            eventSubService.onMessageDeleted(async (event) => {
+              console.log('Message deleted event received:', event.messageId);
+              deleteMessage(event.messageId);
+              
+              // Update database to mark message as deleted
+              if (window.electron?.database) {
+                try {
+                  await window.electron.database.markMessageAsDeleted(event.messageId);
+                } catch (err) {
+                  console.error('Failed to mark message as deleted in database:', err);
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.error('Failed to connect:', err)
+          setError('Failed to connect to Twitch chat. Try logging in again.')
+          await oauthServiceRef.current.clearToken()
+          setAuthenticated(null)
+        }
       }
     })()
 
     return () => {
-      service.disconnect()
+      eventSubService.disconnect()
+      chatService.disconnect()
     }
   }, [isAuthenticated, authenticatedUser, addMessage, deleteMessage, setConnected, setError, setAuthenticated])
 
@@ -212,7 +248,7 @@ function App() {
     if (!isConnected) return
 
     const fetchChatters = async () => {
-      const chattersData = await chatServiceRef.current.getChatters()
+      const chattersData = await apiServiceRef.current.getChatters()
       setChatters(chattersData)
     }
 
@@ -354,7 +390,7 @@ function App() {
   const handleDeleteMessage = async () => {
     if (contextMenu) {
       // Call Twitch API to delete the message
-      const success = await chatServiceRef.current.deleteMessage(contextMenu.messageId)
+      const success = await apiServiceRef.current.deleteMessage(contextMenu.messageId)
       
       // Mark as deleted locally (strikethrough)
       deleteMessage(contextMenu.messageId)
@@ -369,7 +405,7 @@ function App() {
 
   const handleTimeoutUser = async () => {
     if (contextMenu) {
-      const success = await chatServiceRef.current.timeoutUser(contextMenu.userId, 600) // 10 minute timeout
+      const success = await apiServiceRef.current.timeoutUser(contextMenu.userId, 600) // 10 minute timeout
       if (!success) {
         console.error('Failed to timeout user')
       }
@@ -379,7 +415,7 @@ function App() {
 
   const handleBanUser = async () => {
     if (contextMenu) {
-      const success = await chatServiceRef.current.banUser(contextMenu.userId)
+      const success = await apiServiceRef.current.banUser(contextMenu.userId)
       if (!success) {
         console.error('Failed to ban user')
       }
@@ -568,7 +604,7 @@ function App() {
         <UserCard
           username={userCardInfo.username}
           userId={userCardInfo.userId}
-          chatService={chatServiceRef.current}
+          apiService={apiServiceRef.current}
           onClose={() => setUserCardInfo(null)}
           initialX={userCardInfo.x}
           initialY={userCardInfo.y}

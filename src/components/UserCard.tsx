@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import './UserCard.css'
-import { TwitchChatService } from '../services/TwitchChatService'
+import { TwitchApiService } from '../services/TwitchApiService'
 
 interface UserCardProps {
     username: string
     userId: string
-    chatService: TwitchChatService
+    apiService: TwitchApiService
     onClose: () => void
     initialX?: number
     initialY?: number
@@ -14,7 +14,7 @@ interface UserCardProps {
 export function UserCard({
     username,
     userId,
-    chatService,
+    apiService,
     onClose,
     initialX,
     initialY
@@ -94,11 +94,11 @@ export function UserCard({
             setIsLoading(true)
             // Fetch subscription info, ban info, VIPs and moderators lists using userId
             const [info,subscriptionInfo, banInfo, vipIds, modIds] = await Promise.all([
-                chatService.getUserInfo(userId),
-                chatService.getUserSubscriptionInfo(userId),
-                chatService.getUserBanInfos(userId),
-                chatService.getVips(),
-                chatService.getModerators()
+                apiService.getUserInfo(userId),
+                apiService.getUserSubscriptionInfo(userId),
+                apiService.getUserBanInfos(userId),
+                apiService.getVips(),
+                apiService.getModerators()
             ])
             
             if (info)
@@ -123,7 +123,7 @@ export function UserCard({
         }
 
         fetchUserInfo()
-    }, [username, userId, chatService])
+    }, [username, userId, apiService])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (cardRef.current) {
@@ -181,9 +181,9 @@ export function UserCard({
     const handleTimeout = async () => {
         if (!userInfo) return
         if (userInfo.isTimedOut) {
-            await chatService.unbanUser(userInfo.id)
+            await apiService.unbanUser(userInfo.id)
         } else {
-            await chatService.timeoutUser(userInfo.id)
+            await apiService.timeoutUser(userInfo.id)
         }
         onClose()
     }
@@ -191,9 +191,9 @@ export function UserCard({
     const handleBan = async () => {
         if (!userInfo) return
         if (userInfo.isBanned) {
-            await chatService.unbanUser(userInfo.id)
+            await apiService.unbanUser(userInfo.id)
         } else {
-            await chatService.banUser(userInfo.id)
+            await apiService.banUser(userInfo.id)
         }
         onClose()
     }
@@ -201,9 +201,9 @@ export function UserCard({
     const handleVip = async () => {
         if (!userInfo) return
         if (userInfo.isVip) {
-            await chatService.removeVip(userInfo.id)
+            await apiService.removeVip(userInfo.id)
         } else {
-            await chatService.addVip(userInfo.id)
+            await apiService.addVip(userInfo.id)
         }
         onClose()
     }
@@ -211,9 +211,9 @@ export function UserCard({
     const handleMod = async () => {
         if (!userInfo) return
         if (userInfo.isMod) {
-            await chatService.removeModerator(userInfo.id)
+            await apiService.removeModerator(userInfo.id)
         } else {
-            await chatService.addModerator(userInfo.id)
+            await apiService.addModerator(userInfo.id)
         }
         onClose()
     }
