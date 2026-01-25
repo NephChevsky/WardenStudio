@@ -42,7 +42,7 @@ export function UserCard({
     const [isDragging, setIsDragging] = useState(false)
     const [position, setPosition] = useState({ 
         x: initialX !== undefined ? initialX + 10 : window.innerWidth / 2 - 175, 
-        y: initialY !== undefined ? initialY + 10 : 100 
+        y: initialY !== undefined ? initialY - 200 : 100  // Open above cursor, estimated height offset
     })
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const [showMessages, setShowMessages] = useState(false)
@@ -82,7 +82,9 @@ export function UserCard({
     useEffect(() => {
         // Update position when initialX or initialY changes (new user clicked)
         if (initialX !== undefined && initialY !== undefined) {
-            const constrained = constrainPosition(initialX + 10, initialY + 10)
+            // Position card above cursor - use actual card height if available
+            const cardHeight = cardRef.current?.offsetHeight || 200
+            const constrained = constrainPosition(initialX + 10, initialY - cardHeight - 10)
             setPosition(constrained)
         }
     }, [initialX, initialY])
