@@ -83,6 +83,10 @@ ipcMain.handle('db-get-recent-messages', (_event, limit: number) => {
   return databaseService.getRecentMessages(limit)
 })
 
+ipcMain.handle('db-mark-message-deleted', (_event, messageId: string) => {
+  databaseService.markMessageAsDeleted(messageId)
+})
+
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -192,8 +196,8 @@ function createWindow() {
         'Content-Security-Policy': [
           // In development, allow vite dev server and inline scripts for HMR
           VITE_DEV_SERVER_URL
-            ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss://irc-ws.chat.twitch.tv https://id.twitch.tv https://api.twitch.tv ws://localhost:*;"
-            : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: static-cdn.jtvnw.net; connect-src 'self' wss://irc-ws.chat.twitch.tv https://id.twitch.tv https://api.twitch.tv;"
+            ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss://irc-ws.chat.twitch.tv wss://eventsub.wss.twitch.tv https://id.twitch.tv https://api.twitch.tv ws://localhost:*;"
+            : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: static-cdn.jtvnw.net; connect-src 'self' wss://irc-ws.chat.twitch.tv wss://eventsub.wss.twitch.tv https://id.twitch.tv https://api.twitch.tv;"
         ]
       }
     })

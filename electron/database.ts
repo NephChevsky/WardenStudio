@@ -22,6 +22,7 @@ export interface DbChatMessage {
   bits?: number;
   replyParentMessageId?: string;
   emoteOffsets?: string;
+  isDeleted?: boolean;
 }
 
 class DatabaseService {
@@ -75,7 +76,8 @@ class DatabaseService {
         isHighlighted INTEGER NOT NULL DEFAULT 0,
         bits INTEGER,
         replyParentMessageId TEXT,
-        emoteOffsets TEXT
+        emoteOffsets TEXT,
+        isDeleted INTEGER NOT NULL DEFAULT 0
       )
     `);
 
@@ -243,7 +245,8 @@ class DatabaseService {
         m.isHighlighted,
         m.bits,
         m.replyParentMessageId,
-        m.emoteOffsets
+        m.emoteOffsets,
+        m.isDeleted
       FROM messages m
       INNER JOIN viewers v ON m.userId = v.id
       ORDER BY m.timestamp DESC
@@ -268,7 +271,15 @@ class DatabaseService {
       bits: row.bits || undefined,
       replyParentMessageId: row.replyParentMessageId || undefined,
       emoteOffsets: row.emoteOffsets || undefined,
+      isDeleted: row.isDeleted === 1,
     }));
+  }
+
+  markMessageAsDeleted(messageId: string): void {
+    if (!this.db) return;
+
+    const stmt = this.db.prepare('UPDATE messages SET isDeleted = 1 WHERE id = ?');
+    stmt.run(messageId);
   }
 
   close() {

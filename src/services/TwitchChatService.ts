@@ -2,6 +2,7 @@ import { ChatClient } from '@twurple/chat';
 import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { ApiClient } from '@twurple/api';
 import { setBadgeCache } from '../utils/badgeParser';
+import { TwitchEventSubService } from './TwitchEventSubService';
 
 export interface ChatMessage {
   id: string;
@@ -25,7 +26,9 @@ export interface ChatMessage {
 export class TwitchChatService {
   private chatClient: ChatClient | null = null;
   private apiClient: ApiClient | null = null;
+  private eventSubService: TwitchEventSubService | null = null;
   private onMessageCallback: ((message: ChatMessage) => void) | null = null;
+  private onMessageDeletedCallback: ((messageId: string) => void) | null = null;
   private channel: string = '';
   private currentUser: { id: string; name: string; displayName: string; color?: string } | null = null;
   private badgeCache: Map<string, string> = new Map();
@@ -94,6 +97,18 @@ export class TwitchChatService {
       
       // Share badge cache with badge parser utility
       setBadgeCache(this.badgeCache);
+
+      // Initialize EventSub service for message deletion events
+      this.eventSubService = new TwitchEventSubService();
+      await this.eventSubService.connect(this.apiClient, this.broadcasterId, this.currentUser.id);
+      
+      // Handle message deletion events from EventSub
+      this.eventSubService.onMessageDeleted((event) => {
+        console.log('Message deleted via EventSub:', event);
+        if (this.onMessageDeletedCallback) {
+          this.onMessageDeletedCallback(event.messageId);
+        }
+      });
     } catch (err) {
       console.error('Failed to initialize chat service:', err);
       throw err;
@@ -208,6 +223,10 @@ export class TwitchChatService {
 
   onMessage(callback: (message: ChatMessage) => void) {
     this.onMessageCallback = callback;
+  }
+
+  onMessageDeleted(callback: (messageId: string) => void) {
+    this.onMessageDeletedCallback = callback;
   }
 
   async sendMessage(message: string): Promise<void> {
@@ -547,10 +566,15 @@ export class TwitchChatService {
     }
   }
 
-  disconnect() {
+  async disconnect() {
     if (this.chatClient) {
       this.chatClient.quit();
       this.chatClient = null;
+    }
+    
+    if (this.eventSubService) {
+      await this.eventSubService.disconnect();
+      this.eventSubService = null;
     }
   }
 }

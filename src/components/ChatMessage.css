@@ -255,15 +255,28 @@
 }
 
 /* Deleted Messages */
+.deleted-indicator {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--base-font-size, 13px) * 0.25);
+  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
+  background: rgba(255, 80, 80, 0.2);
+  border-radius: 3px;
+  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  font-weight: 600;
+  color: #ff5050;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.deleted-indicator svg {
+  width: calc(var(--base-font-size, 13px) * 1.08);
+  height: calc(var(--base-font-size, 13px) * 1.08);
+}
+
 .chat-line.deleted .chat-message {
   text-decoration: line-through;
   opacity: 0.5;
-}
-
-.chat-line.deleted .chat-username,
-.chat-line.deleted .chat-timestamp,
-.chat-line.deleted .chat-badges {
-  opacity: 0.6;
 }
 
 .chat-line.deleted .chat-username,

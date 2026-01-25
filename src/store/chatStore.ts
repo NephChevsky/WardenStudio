@@ -123,6 +123,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           bits: msg.bits,
           replyParentMessageId: msg.replyParentMessageId,
           emoteOffsets: msg.emoteOffsets,
+          isDeleted: msg.isDeleted || false,
         }));
         
         set({ messages, shouldScrollToBottom: true });

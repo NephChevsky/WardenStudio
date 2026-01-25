@@ -168,6 +168,22 @@ function App() {
       addMessage(message);
     });
 
+    // Register message deletion handler
+    service.onMessageDeleted(async (messageId) => {
+      debugger;
+      console.log('Message deleted event received:', messageId);
+      deleteMessage(messageId);
+      
+      // Update database to mark message as deleted
+      if (window.electron?.database) {
+        try {
+          await window.electron.database.markMessageAsDeleted(messageId);
+        } catch (err) {
+          console.error('Failed to mark message as deleted in database:', err);
+        }
+      }
+    });
+
     // Auto-connect using OAuth token to the authenticated user's channel
     (async () => {
       const channel = authenticatedUser.name
@@ -189,7 +205,7 @@ function App() {
     return () => {
       service.disconnect()
     }
-  }, [isAuthenticated, authenticatedUser, addMessage, setConnected, setError, setAuthenticated])
+  }, [isAuthenticated, authenticatedUser, addMessage, deleteMessage, setConnected, setError, setAuthenticated])
 
   // Fetch chatters list every minute
   useEffect(() => {

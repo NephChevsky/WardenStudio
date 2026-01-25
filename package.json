@@ -60,6 +60,7 @@
     "@twurple/api": "^8.0.3",
     "@twurple/auth": "^8.0.3",
     "@twurple/chat": "^8.0.3",
+    "@twurple/eventsub-ws": "^8.0.3",
     "better-sqlite3": "^12.6.2",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",

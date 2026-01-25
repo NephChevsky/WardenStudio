@@ -4,6 +4,7 @@ import type { ChatMessage } from '../services/TwitchChatService';
 
 interface UseChatServiceOptions {
   onMessage: (message: ChatMessage) => void;
+  onMessageDeleted?: (messageId: string) => void;
   channel: string;
   accessToken: string;
   clientId: string;
@@ -12,6 +13,7 @@ interface UseChatServiceOptions {
 
 export function useChatService({
   onMessage,
+  onMessageDeleted,
   channel,
   accessToken,
   clientId,
@@ -29,6 +31,11 @@ export function useChatService({
 
     // Register message handler only once
     service.onMessage(onMessage);
+    
+    // Register message deleted handler if provided
+    if (onMessageDeleted) {
+      service.onMessageDeleted(onMessageDeleted);
+    }
 
     // Connect to chat
     const connect = async () => {

@@ -8,7 +8,8 @@ export class TwitchOAuthService {
   private readonly scopes = [
     'chat:read', 
     'chat:edit', 
-    'user:read:email', 
+    'user:read:email',
+    'user:read:chat', // Required for EventSub chat events
     'moderator:read:chatters', 
     'channel:read:subscriptions', 
     'moderator:read:followers',
@@ -16,7 +17,8 @@ export class TwitchOAuthService {
     'moderator:manage:banned_users',
     'moderator:manage:chat_messages',
     'channel:manage:vips',
-    'channel:manage:moderators'
+    'channel:manage:moderators',
+    'moderator:read:chat_messages' // For EventSub message deletion events
   ];
   private readonly storage: SecureStorageService;
   private readonly STATE_KEY = 'oauth_state';

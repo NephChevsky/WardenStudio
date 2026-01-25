@@ -59,6 +59,9 @@ contextBridge.exposeInMainWorld('electron', {
     getRecentMessages(limit: number) {
       return ipcRenderer.invoke('db-get-recent-messages', limit)
     },
+    markMessageAsDeleted(messageId: string) {
+      return ipcRenderer.invoke('db-mark-message-deleted', messageId)
+    },
   },
   // Auto-updater API
   updater: {
