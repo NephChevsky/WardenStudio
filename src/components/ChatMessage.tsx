@@ -1,5 +1,5 @@
 import './ChatMessage.css'
-import { getEmoteUrl, parseMessageWithEmotes } from '../utils/emoteParser'
+import { getEmoteUrl, parseMessageWithEmotes } from '../utils/messageParser'
 import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
 import { useChatStore } from '../store/chatStore'
