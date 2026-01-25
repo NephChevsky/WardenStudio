@@ -9,7 +9,7 @@ export interface Viewer {
   displayName: string;
 }
 
-export interface ChatMessage {
+export interface DbChatMessage {
   id: string;
   userId: string;
   message: string;
@@ -239,7 +239,7 @@ class DatabaseService {
     stmt.run(...values);
   }
 
-  getRecentMessages(limit: number = 100): ChatMessage[] {
+  getRecentMessages(limit: number = 100): DbChatMessage[] {
     if (!this.db) return [];
 
     const stmt = this.db.prepare(`
