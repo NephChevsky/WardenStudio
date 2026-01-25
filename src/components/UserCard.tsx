@@ -4,6 +4,7 @@ import './ChatMessage.css'
 import { TwitchApiService } from '../services/TwitchApiService'
 import { useChatStore } from '../store/chatStore'
 import { useAuthStore } from '../store/authStore'
+import { useSettingsStore } from '../store/settingsStore'
 import type { ChatMessage } from '../services/TwitchChatService'
 import { ChatMessage as ChatMessageComponent } from './ChatMessage'
 
@@ -54,6 +55,7 @@ export function UserCard({
     const messagesListRef = useRef<HTMLDivElement>(null)
     const currentUserId = useAuthStore(state => state.currentUserId)
     const broadcasterId = useAuthStore(state => state.broadcasterId)
+    const fontSize = useSettingsStore(state => state.fontSize)
 
     const constrainPosition = (x: number, y: number) => {
         const cardWidth = 350
@@ -344,8 +346,9 @@ export function UserCard({
             style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,
-                cursor: isDragging ? 'grabbing' : 'default'
-            }}>
+                cursor: isDragging ? 'grabbing' : 'default',
+                '--base-font-size': `${fontSize}px`
+            } as React.CSSProperties}>
             <div className="user-card-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab' }}>
                 <h3>{userInfo?.displayName || username}</h3>
                 <button className="user-card-close" onClick={onClose}>
