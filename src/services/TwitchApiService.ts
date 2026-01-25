@@ -1,12 +1,11 @@
 import { ApiClient } from '@twurple/api';
 import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { setBadgeCache } from '../utils/badgeParser';
+import { useAuthStore } from '../store/authStore';
 
 export class TwitchApiService {
   private apiClient: ApiClient | null = null;
-  private currentUser: { id: string; name: string; displayName: string; color?: string } | null = null;
   private badgeCache: Map<string, string> = new Map();
-  private broadcasterId: string = '';
 
   async initialize(channel: string, accessToken: string, clientId: string) {
     const authProvider = new StaticAuthProvider(clientId, accessToken);
@@ -27,22 +26,22 @@ export class TwitchApiService {
         throw new Error('Failed to get user information');
       }
 
-      this.currentUser = {
-        id: authenticatedUser.id,
-        name: authenticatedUser.name,
-        displayName: authenticatedUser.displayName,
-      };
-
       // Get user's chat color using Twurple API
       const userChatColor = await this.apiClient.chat.getColorForUser(authenticatedUser.id);
-      if (userChatColor) {
-        this.currentUser.color = userChatColor;
-      }
+
+      // Store current user in authStore
+      useAuthStore.getState().setCurrentUser(
+        authenticatedUser.id,
+        authenticatedUser.name,
+        authenticatedUser.displayName,
+        userChatColor ?? undefined
+      );
 
       // Get broadcaster info using Twurple API
       const broadcaster = await this.apiClient.users.getUserByName(channel);
       if (broadcaster) {
-        this.broadcasterId = broadcaster.id;
+        // Store broadcaster ID in authStore
+        useAuthStore.getState().setBroadcasterId(broadcaster.id);
       }
 
       // Fetch global badges using Twurple API
@@ -54,8 +53,9 @@ export class TwitchApiService {
       }
 
       // Fetch channel badges using Twurple API
-      if (this.broadcasterId) {
-        const channelBadges = await this.apiClient.chat.getChannelBadges(this.broadcasterId);
+      const { broadcasterId } = useAuthStore.getState();
+      if (broadcasterId) {
+        const channelBadges = await this.apiClient.chat.getChannelBadges(broadcasterId);
         for (const badgeSet of channelBadges) {
           for (const version of badgeSet.versions) {
             this.badgeCache.set(`${badgeSet.id}:${version.id}`, version.getImageUrl(1));
@@ -76,15 +76,22 @@ export class TwitchApiService {
   }
 
   getBroadcasterId(): string {
-    return this.broadcasterId;
+    return useAuthStore.getState().broadcasterId || '';
   }
 
   getCurrentUserId(): string | null {
-    return this.currentUser?.id || null;
+    return useAuthStore.getState().currentUserId;
   }
 
   getCurrentUser(): { id: string; name: string; displayName: string; color?: string } | null {
-    return this.currentUser;
+    const { currentUserId, currentUserName, currentUserDisplayName, currentUserColor } = useAuthStore.getState();
+    if (!currentUserId || !currentUserName) return null;
+    return {
+      id: currentUserId,
+      name: currentUserName,
+      displayName: currentUserDisplayName || currentUserName,
+      color: currentUserColor
+    };
   }
 
   getBadgeUrl(badgeKey: string): string | null {
@@ -92,12 +99,13 @@ export class TwitchApiService {
   }
 
   async getChatters(): Promise<string[]> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return [];
     }
 
     try {
-      const chattersResponse = await this.apiClient.chat.getChatters(this.broadcasterId);
+      const chattersResponse = await this.apiClient.chat.getChatters(broadcasterId);
       return chattersResponse.data.map(chatter => chatter.userDisplayName);
     } catch (err) {
       console.error('Failed to fetch chatters:', err);
@@ -109,7 +117,8 @@ export class TwitchApiService {
     isSubscribed: boolean;
     subscriptionTier: string;
   }> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return { isSubscribed: false, subscriptionTier: 'None' };
     }
 
@@ -117,7 +126,7 @@ export class TwitchApiService {
     let subscriptionTier = 'None';
 
     try {
-      const subscription = await this.apiClient.subscriptions.getSubscriptionForUser(this.broadcasterId, userId);
+      const subscription = await this.apiClient.subscriptions.getSubscriptionForUser(broadcasterId, userId);
       if (subscription) {
         isSubscribed = true;
         // Get subscription tier (1000 = Tier 1, 2000 = Tier 2, 3000 = Tier 3)
@@ -138,7 +147,8 @@ export class TwitchApiService {
     isTimedOut: boolean;
     timeoutExpiresAt: Date | null;
   }> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return { isBanned: false, isTimedOut: false, timeoutExpiresAt: null };
     }
 
@@ -147,7 +157,7 @@ export class TwitchApiService {
     let timeoutExpiresAt: Date | null = null;
 
     try {
-      const bans = await this.apiClient.moderation.getBannedUsers(this.broadcasterId, { userId });
+      const bans = await this.apiClient.moderation.getBannedUsers(broadcasterId, { userId });
       if (bans.data.length > 0) {
         const ban = bans.data[0];
         if (ban.expiryDate) {
@@ -170,12 +180,13 @@ export class TwitchApiService {
   }
 
   async getVips(): Promise<string[]> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return [];
     }
 
     try {
-      const vips = await this.apiClient.channels.getVips(this.broadcasterId);
+      const vips = await this.apiClient.channels.getVips(broadcasterId);
       return vips.data.map(vip => vip.id);
     } catch (err) {
       console.log('Failed to fetch VIPs:', err);
@@ -184,12 +195,13 @@ export class TwitchApiService {
   }
 
   async getModerators(): Promise<string[]> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return [];
     }
 
     try {
-      const mods = await this.apiClient.moderation.getModerators(this.broadcasterId);
+      const mods = await this.apiClient.moderation.getModerators(broadcasterId);
       return mods.data.map(mod => mod.userId);
     } catch (err) {
       console.log('Failed to fetch moderators:', err);
@@ -205,7 +217,8 @@ export class TwitchApiService {
     followingSince: Date | null
     isBroadcaster: boolean
   } | null> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return null;
     }
 
@@ -219,7 +232,7 @@ export class TwitchApiService {
       // Check follow status
       let followingSince: Date | null = null;
       try {
-        const follow = await this.apiClient.channels.getChannelFollowers(this.broadcasterId, user.id);
+        const follow = await this.apiClient.channels.getChannelFollowers(broadcasterId, user.id);
         if (follow.data.length > 0) {
           followingSince = follow.data[0].followDate;
         }
@@ -233,7 +246,7 @@ export class TwitchApiService {
         profileImageUrl: user.profilePictureUrl,
         createdAt: user.creationDate,
         followingSince,
-        isBroadcaster: user.id === this.broadcasterId,
+        isBroadcaster: user.id === broadcasterId,
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);
@@ -242,25 +255,26 @@ export class TwitchApiService {
   }
 
   async timeoutUser(userId: string, duration: number = 600, reason?: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || !currentUserId) {
       console.error('Missing required data:', {
         hasApiClient: !!this.apiClient,
-        broadcasterId: this.broadcasterId,
-        currentUser: this.currentUser
+        broadcasterId: broadcasterId,
+        currentUserId: currentUserId
       });
       return false;
     }
 
     try {
       console.log('Attempting timeout:', {
-        broadcasterId: this.broadcasterId,
-        moderatorId: this.currentUser.id,
+        broadcasterId: broadcasterId,
+        moderatorId: currentUserId,
         userId: userId,
         duration
       });
 
       await this.apiClient.moderation.banUser(
-        this.broadcasterId,
+        broadcasterId,
         {
           user: userId,
           duration,
@@ -275,13 +289,14 @@ export class TwitchApiService {
   }
 
   async banUser(userId: string, reason?: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || !currentUserId) {
       return false;
     }
 
     try {
       await this.apiClient.moderation.banUser(
-        this.broadcasterId,
+        broadcasterId,
         {
           user: userId,
           reason: reason || 'Banned by moderator'
@@ -295,12 +310,13 @@ export class TwitchApiService {
   }
 
   async unbanUser(userId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return false;
     }
 
     try {
-      await this.apiClient.moderation.unbanUser(this.broadcasterId, userId);
+      await this.apiClient.moderation.unbanUser(broadcasterId, userId);
       return true;
     } catch (err) {
       console.error('Failed to unban user:', err);
@@ -309,12 +325,13 @@ export class TwitchApiService {
   }
 
   async addVip(userId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return false;
     }
 
     try {
-      await this.apiClient.channels.addVip(this.broadcasterId, userId);
+      await this.apiClient.channels.addVip(broadcasterId, userId);
       return true;
     } catch (err) {
       console.error('Failed to add VIP:', err);
@@ -323,12 +340,13 @@ export class TwitchApiService {
   }
 
   async removeVip(userId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return false;
     }
 
     try {
-      await this.apiClient.channels.removeVip(this.broadcasterId, userId);
+      await this.apiClient.channels.removeVip(broadcasterId, userId);
       return true;
     } catch (err) {
       console.error('Failed to remove VIP:', err);
@@ -337,12 +355,13 @@ export class TwitchApiService {
   }
 
   async addModerator(userId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return false;
     }
 
     try {
-      await this.apiClient.moderation.addModerator(this.broadcasterId, userId);
+      await this.apiClient.moderation.addModerator(broadcasterId, userId);
       return true;
     } catch (err) {
       console.error('Failed to add moderator:', err);
@@ -351,12 +370,13 @@ export class TwitchApiService {
   }
 
   async removeModerator(userId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId) {
+    const { broadcasterId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId) {
       return false;
     }
 
     try {
-      await this.apiClient.moderation.removeModerator(this.broadcasterId, userId);
+      await this.apiClient.moderation.removeModerator(broadcasterId, userId);
       return true;
     } catch (err) {
       console.error('Failed to remove moderator:', err);
@@ -365,12 +385,13 @@ export class TwitchApiService {
   }
 
   async deleteMessage(messageId: string): Promise<boolean> {
-    if (!this.apiClient || !this.broadcasterId || !this.currentUser) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || !currentUserId) {
       return false;
     }
 
     try {
-      await this.apiClient.moderation.deleteChatMessages(this.broadcasterId, messageId);
+      await this.apiClient.moderation.deleteChatMessages(broadcasterId, messageId);
       return true;
     } catch (err) {
       console.error('Failed to delete message:', err);

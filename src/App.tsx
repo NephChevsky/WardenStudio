@@ -193,16 +193,11 @@ function App() {
             throw new Error('Failed to get user or broadcaster info')
           }
 
-          // Initialize chat service with data from API service
+          // Initialize chat service (user info now comes from authStore)
           await chatService.connect(
             channel,
             accessToken,
-            clientId,
-            currentUser.id,
-            currentUser.name,
-            currentUser.displayName,
-            currentUser.color,
-            broadcasterId
+            clientId
           )
 
           setConnected(true)

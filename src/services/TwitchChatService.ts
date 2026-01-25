@@ -1,5 +1,6 @@
 import { ChatClient } from '@twurple/chat';
 import { StaticAuthProvider } from '@twurple/auth';
+import { useAuthStore } from '../store/authStore';
 
 export interface ChatMessage {
   id: string;
@@ -24,29 +25,14 @@ export class TwitchChatService {
   private chatClient: ChatClient | null = null;
   private onMessageCallback: ((message: ChatMessage) => void) | null = null;
   private channel: string = '';
-  private currentUserName: string = '';
-  private currentUserId: string = '';
-  private currentUserDisplayName: string = '';
-  private currentUserColor: string | undefined = undefined;
-  private broadcasterId: string = '';
   private userBadges: string[] = [];
 
   async connect(
     channel: string, 
     accessToken: string, 
-    clientId: string,
-    currentUserId: string,
-    currentUserName: string,
-    currentUserDisplayName: string,
-    currentUserColor: string | undefined,
-    broadcasterId: string
+    clientId: string
   ) {
     this.channel = channel;
-    this.currentUserId = currentUserId;
-    this.currentUserName = currentUserName;
-    this.currentUserDisplayName = currentUserDisplayName;
-    this.currentUserColor = currentUserColor;
-    this.broadcasterId = broadcasterId;
 
     const authProvider = new StaticAuthProvider(clientId, accessToken);
     
@@ -60,6 +46,8 @@ export class TwitchChatService {
 
     this.chatClient.onMessage(async (_channel, user, text, msg) => {
       if (this.onMessageCallback) {
+        const { currentUserName } = useAuthStore.getState();
+        
         const badges: string[] = [];
         // Use Twurple's badge info from message
         msg.userInfo.badges.forEach((version, id) => {
@@ -67,7 +55,7 @@ export class TwitchChatService {
         });
         
         // Store user's own badges for use in sendMessage
-        if (user === this.currentUserName) {
+        if (user === currentUserName) {
           this.userBadges = badges;
         }
 
@@ -110,10 +98,11 @@ export class TwitchChatService {
         // Save message to database
         if (window.electron?.database && msg.userInfo.userId) {
           try {
+            const { currentUserId } = useAuthStore.getState();
             let shouldInsert = true;
             
             // Check if this is a message sent by the current user
-            if (msg.userInfo.userId === this.currentUserId) {
+            if (msg.userInfo.userId === currentUserId) {
               // Look for a recent self-sent message that matches
               const recentSelfMessage = await window.electron.database.findRecentSelfMessage(
                 msg.userInfo.userId,
@@ -163,30 +152,34 @@ export class TwitchChatService {
   }
 
   async sendMessage(message: string): Promise<void> {
-    if (!this.chatClient || !this.channel || !this.currentUserId) return;
+    if (!this.chatClient || !this.channel) return;
+    
+    const { currentUserId, currentUserName, currentUserDisplayName, currentUserColor, broadcasterId } = useAuthStore.getState();
+    
+    if (!currentUserId) return;
     
     await this.chatClient.say(this.channel, message);
     
-    if (this.onMessageCallback && this.currentUserId) {
+    if (this.onMessageCallback && currentUserId) {
       
       const badges: string[] = [];
       
       if (this.userBadges.length > 0) {
         badges.push(...this.userBadges);
       } else {
-        if (this.currentUserId === this.broadcasterId) {
+        if (currentUserId === broadcasterId) {
           badges.push('broadcaster:1');
         }
       }
       
       const chatMessage: ChatMessage = {
         id: `self-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        username: this.currentUserName,
-        userId: this.currentUserId,
-        displayName: this.currentUserDisplayName,
+        username: currentUserName || '',
+        userId: currentUserId,
+        displayName: currentUserDisplayName || '',
         message: message,
         timestamp: new Date(),
-        color: this.currentUserColor,
+        color: currentUserColor,
         badges: badges,
         isFirstMessage: false,
         isReturningChatter: false,
@@ -194,11 +187,11 @@ export class TwitchChatService {
       };
 
       // Save message to database
-      if (window.electron?.database) {
+      if (window.electron?.database && currentUserId) {
         try {
           await window.electron.database.insertMessage({
             ...chatMessage,
-            userId: this.currentUserId,
+            userId: currentUserId,
             badges: badges,
             emoteOffsets: null // Self-sent messages don't have emotes initially
           });
