@@ -28,7 +28,7 @@ function App() {
     messages,
     messageInput,
     isConnected,
-    readMessageIds,
+    lastReadMessageId,
     shouldScrollToBottom,
     addMessage,
     setMessageInput,
@@ -459,20 +459,28 @@ function App() {
 
       <div className="chat-messages" ref={chatMessagesRef}>
         <div className="messages-list">
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              message={msg}
-              isRead={readMessageIds.has(msg.id)}
-              fontSize={fontSize}
-              readMessageBackgroundColor={getReadMessageColorWithAlpha()}
-              allMessages={messages}
-              onMarkAsRead={markAsRead}
-              onUsernameClick={handleUsernameClick}
-              onContextMenu={handleContextMenu}
-              isContextMenuOpen={contextMenu !== null}
-            />
-          ))}
+          {messages.map((msg, index) => {
+            // Message is read if it's at or before the last read message
+            const lastReadIndex = lastReadMessageId 
+              ? messages.findIndex(m => m.id === lastReadMessageId)
+              : -1;
+            const isRead = lastReadIndex >= 0 && index <= lastReadIndex;
+            
+            return (
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                isRead={isRead}
+                fontSize={fontSize}
+                readMessageBackgroundColor={getReadMessageColorWithAlpha()}
+                allMessages={messages}
+                onMarkAsRead={markAsRead}
+                onUsernameClick={handleUsernameClick}
+                onContextMenu={handleContextMenu}
+                isContextMenuOpen={contextMenu !== null}
+              />
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
         {selectedUser && (
@@ -494,7 +502,7 @@ function App() {
           <button 
             onClick={markAllAsRead} 
             className="mark-all-read-button"
-            disabled={messages.length === 0 || readMessageIds.size === messages.length}
+            disabled={messages.length === 0 || (messages.length > 0 && lastReadMessageId === messages[messages.length - 1].id)}
           >
             Mark All as Read
           </button>

@@ -5,7 +5,7 @@ interface ChatStore {
   messages: ChatMessage[];
   messageInput: string;
   isConnected: boolean;
-  readMessageIds: Set<string>;
+  lastReadMessageId: string | null;
   shouldScrollToBottom: boolean;
 
   addMessage: (message: ChatMessage) => void;
@@ -24,7 +24,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   messageInput: '',
   isConnected: false,
-  readMessageIds: new Set<string>(),
+  lastReadMessageId: null,
   shouldScrollToBottom: false,
 
   addMessage: (message) => set((state) => {
@@ -62,7 +62,7 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   clearMessages: () => set({ 
     messages: [], 
-    readMessageIds: new Set() 
+    lastReadMessageId: null
   }),
 
   deleteMessage: (messageId) => set((state) => {
@@ -81,18 +81,19 @@ export const useChatStore = create<ChatStore>((set) => ({
     const messageIndex = state.messages.findIndex(msg => msg.id === messageId);
     if (messageIndex === -1) return state;
 
-    const newReadIds = new Set(state.readMessageIds);
-    // Mark this message and all messages before it as read
-    for (let i = 0; i <= messageIndex; i++) {
-      newReadIds.add(state.messages[i].id);
-    }
+    // Save to localStorage
+    localStorage.setItem('lastReadMessageId', messageId);
 
-    return { readMessageIds: newReadIds };
+    return { lastReadMessageId: messageId };
   }),
 
   markAllAsRead: () => set((state) => {
-    const newReadIds = new Set(state.messages.map(msg => msg.id));
-    return { readMessageIds: newReadIds };
+    if (state.messages.length === 0) return state;
+    
+    const lastMessageId = state.messages[state.messages.length - 1].id;
+    // Save to localStorage
+    localStorage.setItem('lastReadMessageId', lastMessageId);
+    return { lastReadMessageId: lastMessageId };
   }),
 
   setShouldScrollToBottom: (should) => set({ shouldScrollToBottom: should }),
@@ -130,6 +131,12 @@ export const useChatStore = create<ChatStore>((set) => ({
         }));
         
         set({ messages, shouldScrollToBottom: true });
+      }
+
+      // Load read message IDs from localStorage
+      const savedLastReadId = localStorage.getItem('lastReadMessageId');
+      if (savedLastReadId) {
+        set({ lastReadMessageId: savedLastReadId });
       }
     } catch (err) {
       console.error('Failed to load messages from database:', err);
