@@ -275,6 +275,68 @@ class DatabaseService {
     }));
   }
 
+  getMessagesByUserId(userId: string, limit: number = 100): DbChatMessage[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT 
+        m.id,
+        m.userId,
+        v.username,
+        v.displayName,
+        m.message,
+        m.timestamp,
+        m.color,
+        m.badges,
+        m.isFirstMessage,
+        m.isReturningChatter,
+        m.isHighlighted,
+        m.bits,
+        m.replyParentMessageId,
+        m.emoteOffsets,
+        m.isDeleted
+      FROM messages m
+      INNER JOIN viewers v ON m.userId = v.id
+      WHERE m.userId = ?
+      ORDER BY m.timestamp DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(userId, limit) as any[];
+
+    // Reverse to get chronological order (oldest first)
+    return rows.reverse().map(row => ({
+      id: row.id,
+      userId: row.userId,
+      username: row.username,
+      displayName: row.displayName,
+      message: row.message,
+      timestamp: row.timestamp,
+      color: row.color || undefined,
+      badges: JSON.parse(row.badges || '[]'),
+      isFirstMessage: row.isFirstMessage === 1,
+      isReturningChatter: row.isReturningChatter === 1,
+      isHighlighted: row.isHighlighted === 1,
+      bits: row.bits || undefined,
+      replyParentMessageId: row.replyParentMessageId || undefined,
+      emoteOffsets: row.emoteOffsets || undefined,
+      isDeleted: row.isDeleted === 1,
+    }));
+  }
+
+  getMessageCountByUserId(userId: string): number {
+    if (!this.db) return 0;
+
+    const stmt = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM messages
+      WHERE userId = ?
+    `);
+
+    const result = stmt.get(userId) as { count: number } | undefined;
+    return result?.count || 0;
+  }
+
   markMessageAsDeleted(messageId: string): void {
     if (!this.db) return;
 

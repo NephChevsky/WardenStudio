@@ -59,6 +59,12 @@ contextBridge.exposeInMainWorld('electron', {
     getRecentMessages(limit: number) {
       return ipcRenderer.invoke('db-get-recent-messages', limit)
     },
+    getMessagesByUserId(userId: string, limit: number) {
+      return ipcRenderer.invoke('db-get-messages-by-user-id', userId, limit)
+    },
+    getMessageCountByUserId(userId: string) {
+      return ipcRenderer.invoke('db-get-message-count-by-user-id', userId)
+    },
     markMessageAsDeleted(messageId: string) {
       return ipcRenderer.invoke('db-mark-message-deleted', messageId)
     },

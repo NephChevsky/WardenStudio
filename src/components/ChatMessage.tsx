@@ -6,28 +6,30 @@ import { useChatStore } from '../store/chatStore'
 
 interface ChatMessageProps {
   message: ChatMessageType
-  isRead: boolean
-  readMessageBackgroundColor: string
-  onMarkAsRead: (id: string) => void
-  onContextMenu: (e: React.MouseEvent, messageId: string) => void
-  isContextMenuOpen: boolean
-  onUsernameClick: (username: string, userId: string, x: number, y: number) => void
+  isRead?: boolean
+  readMessageBackgroundColor?: string
+  onMarkAsRead?: (id: string) => void
+  onContextMenu?: (e: React.MouseEvent, messageId: string) => void
+  isContextMenuOpen?: boolean
+  onUsernameClick?: (username: string, userId: string, x: number, y: number) => void
 }
 
 export function ChatMessage({
   message: msg,
-  isRead,
-  readMessageBackgroundColor,
+  isRead = false,
+  readMessageBackgroundColor = '',
   onMarkAsRead,
   onContextMenu,
-  isContextMenuOpen,
+  isContextMenuOpen = false,
   onUsernameClick
 }: ChatMessageProps) {
   const getMessageById = useChatStore(state => state.getMessageById)
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    onUsernameClick(msg.displayName, msg.userId, e.clientX, e.clientY)
+    if (onUsernameClick) {
+      onUsernameClick(msg.displayName, msg.userId, e.clientX, e.clientY)
+    }
   }
 
   return (
@@ -35,14 +37,14 @@ export function ChatMessage({
       key={msg.id} 
       className={`chat-line ${isRead ? 'read' : ''} ${msg.isFirstMessage ? 'first-time-chatter' : ''} ${msg.isReturningChatter ? 'returning-chatter' : ''} ${msg.isHighlighted ? 'highlighted-message' : ''} ${msg.bits ? 'cheer-message' : ''} ${msg.isDeleted ? 'deleted' : ''}`}
       onClick={() => {
-        if (!isContextMenuOpen) {
+        if (!isContextMenuOpen && onMarkAsRead) {
           onMarkAsRead(msg.id)
         }
       }}
-      onContextMenu={(e) => onContextMenu(e, msg.id)}
+      onContextMenu={(e) => onContextMenu && onContextMenu(e, msg.id)}
       style={{ 
-        cursor: 'pointer',
-        ...(isRead && { background: readMessageBackgroundColor })
+        cursor: onMarkAsRead ? 'pointer' : 'default',
+        ...(isRead && readMessageBackgroundColor && { background: readMessageBackgroundColor })
       }}
     >
       <div className="chat-line-wrapper">

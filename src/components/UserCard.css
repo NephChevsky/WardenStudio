@@ -356,3 +356,70 @@
   text-align: center;
   color: #adadb8;
 }
+
+.user-card-message-count-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(145, 71, 255, 0.1);
+  border-top: 1px solid #2c2c35;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  color: #9147ff;
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.user-card-message-count-container:hover {
+  background: rgba(145, 71, 255, 0.15);
+}
+
+.user-card-message-count-container svg:first-child {
+  flex-shrink: 0;
+}
+
+.user-card-message-count-container span {
+  flex: 1;
+}
+
+.user-card-message-count-container .chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
+}
+
+.user-card-message-count-container .chevron.open {
+  transform: rotate(180deg);
+}
+
+.user-card-messages {
+  border-top: 1px solid #2c2c35;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-card-messages-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-card-messages-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.user-card-messages-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.user-card-messages-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.user-card-messages-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

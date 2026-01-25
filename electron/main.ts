@@ -83,6 +83,14 @@ ipcMain.handle('db-get-recent-messages', (_event, limit: number) => {
   return databaseService.getRecentMessages(limit)
 })
 
+ipcMain.handle('db-get-messages-by-user-id', (_event, userId: string, limit: number) => {
+  return databaseService.getMessagesByUserId(userId, limit)
+})
+
+ipcMain.handle('db-get-message-count-by-user-id', (_event, userId: string) => {
+  return databaseService.getMessageCountByUserId(userId)
+})
+
 ipcMain.handle('db-mark-message-deleted', (_event, messageId: string) => {
   databaseService.markMessageAsDeleted(messageId)
 })

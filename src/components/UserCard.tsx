@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import './UserCard.css'
+import './ChatMessage.css'
 import { TwitchApiService } from '../services/TwitchApiService'
+import { useChatStore } from '../store/chatStore'
+import type { ChatMessage } from '../services/TwitchChatService'
+import { ChatMessage as ChatMessageComponent } from './ChatMessage'
 
 interface UserCardProps {
     username: string
@@ -41,7 +45,12 @@ export function UserCard({
         y: initialY !== undefined ? initialY + 10 : 100 
     })
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const [showMessages, setShowMessages] = useState(false)
+    const [userMessages, setUserMessages] = useState<ChatMessage[]>([])
+    const [messageCount, setMessageCount] = useState(0)
+    const [isAtBottom, setIsAtBottom] = useState(true)
     const cardRef = useRef<HTMLDivElement>(null)
+    const messagesListRef = useRef<HTMLDivElement>(null)
 
     const constrainPosition = (x: number, y: number) => {
         const cardWidth = 350
@@ -86,7 +95,7 @@ export function UserCard({
                 setPosition(constrained)
             }
         }
-    }, [userInfo, isLoading])
+    }, [userInfo, isLoading, showMessages, userMessages])
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -124,6 +133,98 @@ export function UserCard({
 
         fetchUserInfo()
     }, [username, userId, apiService])
+
+    // Track user message count from database and subscribe to updates
+    useEffect(() => {
+        const loadMessageCount = async () => {
+            if (!window.electron) return
+
+            try {
+                const count = await window.electron.database.getMessageCountByUserId(userId)
+                setMessageCount(count)
+            } catch (err) {
+                console.error('Failed to load message count from database:', err)
+            }
+        }
+
+        loadMessageCount()
+
+        // Subscribe to chat store for new messages
+        const unsubscribe = useChatStore.subscribe((state, prevState) => {
+            // Check if a new message was added for this user
+            const newMessages = state.messages.filter(msg => 
+                msg.userId === userId && 
+                !msg.isDeleted &&
+                !prevState.messages.find(m => m.id === msg.id)
+            )
+            
+            if (newMessages.length > 0) {
+                setMessageCount(prev => prev + newMessages.length)
+            }
+        })
+
+        return () => unsubscribe()
+    }, [userId])
+
+    // Load messages only when showMessages is true
+    useEffect(() => {
+        if (showMessages) {
+            const loadMessages = async () => {
+                if (!window.electron) return
+
+                try {
+                    // Get messages from database
+                    const dbMessages = await window.electron.database.getMessagesByUserId(userId, 100)
+
+                    if (dbMessages && dbMessages.length > 0) {
+                        // Convert database messages to ChatMessage format
+                        const messages = dbMessages.map((msg: any) => ({
+                            id: msg.id,
+                            userId: msg.userId,
+                            username: msg.username,
+                            displayName: msg.displayName,
+                            message: msg.message,
+                            timestamp: new Date(msg.timestamp),
+                            color: msg.color,
+                            badges: msg.badges || [],
+                            isFirstMessage: msg.isFirstMessage || false,
+                            isReturningChatter: msg.isReturningChatter || false,
+                            isHighlighted: msg.isHighlighted || false,
+                            bits: msg.bits,
+                            replyParentMessageId: msg.replyParentMessageId,
+                            emoteOffsets: msg.emoteOffsets,
+                            isDeleted: msg.isDeleted || false,
+                        }))
+
+                        setUserMessages(messages)
+                    }
+                } catch (err) {
+                    console.error('Failed to load user messages from database:', err)
+                }
+            }
+
+            loadMessages()
+
+            // Subscribe to chat store for new messages
+            const unsubscribe = useChatStore.subscribe((state) => {
+                const newMessages = state.messages.filter(msg => msg.userId === userId && !msg.isDeleted)
+                // Keep last 100 messages
+                setUserMessages(prev => {
+                    const combined = [...prev, ...newMessages.filter(nm => !prev.find(pm => pm.id === nm.id))]
+                    return combined.slice(-100)
+                })
+            })
+
+            return () => unsubscribe()
+        }
+    }, [showMessages, userId])
+
+    // Scroll to bottom when message history is opened or messages are loaded (only if user is at bottom)
+    useEffect(() => {
+        if (showMessages && messagesListRef.current && userMessages.length > 0 && isAtBottom) {
+            messagesListRef.current.scrollTop = messagesListRef.current.scrollHeight
+        }
+    }, [showMessages, userMessages, isAtBottom])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (cardRef.current) {
@@ -218,6 +319,27 @@ export function UserCard({
         onClose()
     }
 
+    const handleToggleMessages = () => {
+        setShowMessages(!showMessages)
+        setIsAtBottom(true) // Reset to bottom when toggling
+    }
+
+    const handleScroll = () => {
+        if (!messagesListRef.current) return
+        
+        const { scrollTop, scrollHeight, clientHeight } = messagesListRef.current
+        const isBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 10 // 10px threshold
+        setIsAtBottom(isBottom)
+    }
+
+    const formatTimestamp = (date: Date) => {
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        })
+    }
+
     return (
         <div 
             ref={cardRef}
@@ -303,6 +425,29 @@ export function UserCard({
                             </svg>
                         </button>
                     </div>
+                    )}
+
+                    <div className="user-card-message-count-container" onClick={handleToggleMessages} title="Click to view message history">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" />
+                        </svg>
+                        <span>{messageCount} message{messageCount !== 1 ? 's' : ''} sent</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={`chevron ${showMessages ? 'open' : ''}`}>
+                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                        </svg>
+                    </div>
+
+                    {showMessages && userMessages.length > 0 && (
+                        <div className="user-card-messages">
+                            <div className="user-card-messages-list" ref={messagesListRef} onScroll={handleScroll}>
+                                {userMessages.map((msg) => (
+                                    <ChatMessageComponent
+                                        key={msg.id}
+                                        message={msg}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     )}
 
                     {(userInfo.isBanned || userInfo.isTimedOut) && (

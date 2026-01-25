@@ -33,6 +33,8 @@ export interface Database {
   findRecentSelfMessage(userId: string, messageText: string, withinMs: number): Promise<{ id: string } | null>;
   updateMessage(oldId: string, updates: any): Promise<void>;
   getRecentMessages(limit: number = 100): Promise<any[]>;
+  getMessagesByUserId(userId: string, limit: number = 100): Promise<any[]>;
+  getMessageCountByUserId(userId: string): Promise<number>;
   markMessageAsDeleted(messageId: string): Promise<void>;
 }
 
