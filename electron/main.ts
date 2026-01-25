@@ -78,24 +78,24 @@ ipcMain.handle('db-insert-message', (_event, message: any) => {
   databaseService.insertMessage(message)
 })
 
-ipcMain.handle('db-find-recent-self-message', (_event, userId: string, messageText: string, withinMs: number) => {
-  return databaseService.findRecentSelfMessage(userId, messageText, withinMs)
+ipcMain.handle('db-find-recent-self-message', (_event, userId: string, channelId: string, messageText: string, withinMs: number) => {
+  return databaseService.findRecentSelfMessage(userId, channelId, messageText, withinMs)
 })
 
 ipcMain.handle('db-update-message', (_event, oldId: string, updates: any) => {
   databaseService.updateMessage(oldId, updates)
 })
 
-ipcMain.handle('db-get-recent-messages', (_event, limit: number) => {
-  return databaseService.getRecentMessages(limit)
+ipcMain.handle('db-get-recent-messages', (_event, channelId: string, limit: number = 100) => {
+  return databaseService.getRecentMessages(channelId, limit)
 })
 
-ipcMain.handle('db-get-messages-by-user-id', (_event, userId: string, limit: number) => {
-  return databaseService.getMessagesByUserId(userId, limit)
+ipcMain.handle('db-get-messages-by-user-id', (_event, userId: string, channelId: string, limit: number = 100) => {
+  return databaseService.getMessagesByUserId(userId, channelId, limit)
 })
 
-ipcMain.handle('db-get-message-count-by-user-id', (_event, userId: string) => {
-  return databaseService.getMessageCountByUserId(userId)
+ipcMain.handle('db-get-message-count-by-user-id', (_event, userId: string, channelId: string) => {
+  return databaseService.getMessageCountByUserId(userId, channelId)
 })
 
 ipcMain.handle('db-mark-message-deleted', (_event, messageId: string) => {

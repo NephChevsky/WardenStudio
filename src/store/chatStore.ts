@@ -104,7 +104,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       // Load messages from database
       if (!window.electron) return;
 
-      const dbMessages = await window.electron.database.getRecentMessages();
+      const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState());
+      if (!broadcasterId) return;
+
+      const dbMessages = await window.electron.database.getRecentMessages(broadcasterId);
 
       if (dbMessages && dbMessages.length > 0) {
         // Convert database messages to ChatMessage format

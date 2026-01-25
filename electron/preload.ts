@@ -47,20 +47,20 @@ contextBridge.exposeInMainWorld('electron', {
     insertMessage(message: any) {
       return ipcRenderer.invoke('db-insert-message', message)
     },
-    findRecentSelfMessage(userId: string, messageText: string, withinMs: number) {
-      return ipcRenderer.invoke('db-find-recent-self-message', userId, messageText, withinMs)
+    findRecentSelfMessage(userId: string, channelId: string, messageText: string, withinMs: number) {
+      return ipcRenderer.invoke('db-find-recent-self-message', userId, channelId, messageText, withinMs)
     },
     updateMessage(oldId: string, updates: any) {
       return ipcRenderer.invoke('db-update-message', oldId, updates)
     },
-    getRecentMessages(limit: number) {
-      return ipcRenderer.invoke('db-get-recent-messages', limit)
+    getRecentMessages(channelId: string, limit?: number) {
+      return ipcRenderer.invoke('db-get-recent-messages', channelId, limit)
     },
-    getMessagesByUserId(userId: string, limit: number) {
-      return ipcRenderer.invoke('db-get-messages-by-user-id', userId, limit)
+    getMessagesByUserId(userId: string, channelId: string, limit?: number) {
+      return ipcRenderer.invoke('db-get-messages-by-user-id', userId, channelId, limit)
     },
-    getMessageCountByUserId(userId: string) {
-      return ipcRenderer.invoke('db-get-message-count-by-user-id', userId)
+    getMessageCountByUserId(userId: string, channelId: string) {
+      return ipcRenderer.invoke('db-get-message-count-by-user-id', userId, channelId)
     },
     markMessageAsDeleted(messageId: string) {
       return ipcRenderer.invoke('db-mark-message-deleted', messageId)

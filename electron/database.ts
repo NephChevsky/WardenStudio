@@ -12,6 +12,7 @@ export interface Viewer {
 export interface DbChatMessage {
   id: string;
   userId: string;
+  channelId: string;
   message: string;
   timestamp: string;
   color?: string;
@@ -67,6 +68,7 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS messages (
         id TEXT PRIMARY KEY,
         userId TEXT NOT NULL,
+        channelId TEXT NOT NULL,
         message TEXT NOT NULL,
         timestamp TEXT NOT NULL,
         color TEXT,
@@ -91,6 +93,12 @@ class DatabaseService {
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_messages_userId 
       ON messages(userId)
+    `);
+
+    // Create index on channelId for faster channel-specific queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_messages_channelId 
+      ON messages(channelId)
     `);
   }
 
@@ -127,13 +135,13 @@ class DatabaseService {
 
     const stmt = this.db.prepare(`
       INSERT INTO messages (
-        id, userId, message, timestamp, color, badges,
+        id, userId, channelId, message, timestamp, color, badges,
         isFirstMessage,
         isReturningChatter, isHighlighted, bits,
         replyParentMessageId, emoteOffsets
       )
       VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
       ON CONFLICT(id) DO NOTHING
     `);
@@ -141,6 +149,7 @@ class DatabaseService {
     stmt.run(
       message.id,
       message.userId,
+      message.channelId,
       message.message,
       message.timestamp instanceof Date ? message.timestamp.toISOString() : message.timestamp,
       message.color || null,
@@ -154,7 +163,7 @@ class DatabaseService {
     );
   }
 
-  findRecentSelfMessage(userId: string, messageText: string, withinMs: number): { id: string } | null {
+  findRecentSelfMessage(userId: string, channelId: string, messageText: string, withinMs: number): { id: string } | null {
     if (!this.db) return null;
 
     const cutoffTime = new Date(Date.now() - withinMs).toISOString();
@@ -162,6 +171,7 @@ class DatabaseService {
     const stmt = this.db.prepare(`
       SELECT id FROM messages
       WHERE userId = ?
+        AND channelId = ?
         AND message = ?
         AND id LIKE 'self-%'
         AND timestamp > ?
@@ -169,7 +179,7 @@ class DatabaseService {
       LIMIT 1
     `);
 
-    return stmt.get(userId, messageText, cutoffTime) as { id: string } | undefined || null;
+    return stmt.get(userId, channelId, messageText, cutoffTime) as { id: string } | undefined || null;
   }
 
   updateMessage(oldId: string, updates: any): void {
@@ -227,13 +237,14 @@ class DatabaseService {
     stmt.run(...values);
   }
 
-  getRecentMessages(limit: number = 100): DbChatMessage[] {
+  getRecentMessages(channelId: string, limit: number = 100): DbChatMessage[] {
     if (!this.db) return [];
 
     const stmt = this.db.prepare(`
       SELECT 
         m.id,
         m.userId,
+        m.channelId,
         v.username,
         v.displayName,
         m.message,
@@ -249,16 +260,18 @@ class DatabaseService {
         m.isDeleted
       FROM messages m
       INNER JOIN viewers v ON m.userId = v.id
+      WHERE m.channelId = ?
       ORDER BY m.timestamp DESC
       LIMIT ?
     `);
 
-    const rows = stmt.all(limit) as any[];
+    const rows = stmt.all(channelId, limit) as any[];
 
     // Reverse to get chronological order (oldest first)
     return rows.reverse().map(row => ({
       id: row.id,
       userId: row.userId,
+      channelId: row.channelId,
       username: row.username,
       displayName: row.displayName,
       message: row.message,
@@ -275,13 +288,14 @@ class DatabaseService {
     }));
   }
 
-  getMessagesByUserId(userId: string, limit: number = 100): DbChatMessage[] {
+  getMessagesByUserId(userId: string, channelId: string, limit: number = 100): DbChatMessage[] {
     if (!this.db) return [];
 
     const stmt = this.db.prepare(`
       SELECT 
         m.id,
         m.userId,
+        m.channelId,
         v.username,
         v.displayName,
         m.message,
@@ -298,16 +312,18 @@ class DatabaseService {
       FROM messages m
       INNER JOIN viewers v ON m.userId = v.id
       WHERE m.userId = ?
+        AND m.channelId = ?
       ORDER BY m.timestamp DESC
       LIMIT ?
     `);
 
-    const rows = stmt.all(userId, limit) as any[];
+    const rows = stmt.all(userId, channelId, limit) as any[];
 
     // Reverse to get chronological order (oldest first)
     return rows.reverse().map(row => ({
       id: row.id,
       userId: row.userId,
+      channelId: row.channelId,
       username: row.username,
       displayName: row.displayName,
       message: row.message,
@@ -324,16 +340,17 @@ class DatabaseService {
     }));
   }
 
-  getMessageCountByUserId(userId: string): number {
+  getMessageCountByUserId(userId: string, channelId: string): number {
     if (!this.db) return 0;
 
     const stmt = this.db.prepare(`
       SELECT COUNT(*) as count
       FROM messages
       WHERE userId = ?
+        AND channelId = ?
     `);
 
-    const result = stmt.get(userId) as { count: number } | undefined;
+    const result = stmt.get(userId, channelId) as { count: number } | undefined;
     return result?.count || 0;
   }
 

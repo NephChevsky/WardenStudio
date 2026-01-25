@@ -146,8 +146,11 @@ export function UserCard({
         const loadMessageCount = async () => {
             if (!window.electron) return
 
+            const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState())
+            if (!broadcasterId) return
+
             try {
-                const count = await window.electron.database.getMessageCountByUserId(userId)
+                const count = await window.electron.database.getMessageCountByUserId(userId, broadcasterId)
                 setMessageCount(count)
             } catch (err) {
                 console.error('Failed to load message count from database:', err)
@@ -179,9 +182,12 @@ export function UserCard({
             const loadMessages = async () => {
                 if (!window.electron) return
 
+                const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState())
+                if (!broadcasterId) return
+
                 try {
                     // Get messages from database
-                    const dbMessages = await window.electron.database.getMessagesByUserId(userId, 100)
+                    const dbMessages = await window.electron.database.getMessagesByUserId(userId, broadcasterId, 100)
 
                     if (dbMessages && dbMessages.length > 0) {
                         // Convert database messages to ChatMessage format
