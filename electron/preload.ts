@@ -56,6 +56,9 @@ contextBridge.exposeInMainWorld('electron', {
     updateMessage(oldId: string, updates: any) {
       return ipcRenderer.invoke('db-update-message', oldId, updates)
     },
+    getRecentMessages(limit: number) {
+      return ipcRenderer.invoke('db-get-recent-messages', limit)
+    },
   },
   // Auto-updater API
   updater: {

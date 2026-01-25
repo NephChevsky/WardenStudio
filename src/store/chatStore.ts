@@ -17,13 +17,10 @@ interface ChatStore {
   markAsRead: (messageId: string) => void;
   markAllAsRead: () => void;
   setShouldScrollToBottom: (should: boolean) => void;
-  loadFromLocalStorage: () => void;
-  saveToLocalStorage: () => void;
+  loadFromDatabase: () => void;
 }
 
-const MAX_STORED_MESSAGES = 500;
-
-export const useChatStore = create<ChatStore>((set, get) => ({
+export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   messageInput: '',
   isConnected: false,
@@ -52,23 +49,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         const newMessages = [...state.messages];
         newMessages[selfMessageIndex] = message;
         
-        // Auto-save to localStorage
-        setTimeout(() => {
-          const messagesToSave = newMessages.slice(-MAX_STORED_MESSAGES);
-          localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
-        }, 0);
-        
         return { messages: newMessages };
       }
     }
 
     const newMessages = [...state.messages, message];
-    
-    // Auto-save to localStorage (last 500 messages)
-    setTimeout(() => {
-      const messagesToSave = newMessages.slice(-MAX_STORED_MESSAGES);
-      localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
-    }, 0);
 
     return { messages: newMessages };
   }),
@@ -84,12 +69,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const newMessages = state.messages.map(msg => 
       msg.id === messageId ? { ...msg, isDeleted: true } : msg
     );
-
-    // Save to localStorage
-    setTimeout(() => {
-      const messagesToSave = newMessages.slice(-MAX_STORED_MESSAGES);
-      localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
-    }, 0);
 
     return { messages: newMessages };
   }),
@@ -108,62 +87,52 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       newReadIds.add(state.messages[i].id);
     }
 
-    // Save to localStorage
-    localStorage.setItem('readMessageIds', JSON.stringify(Array.from(newReadIds)));
-
     return { readMessageIds: newReadIds };
   }),
 
   markAllAsRead: () => set((state) => {
     const newReadIds = new Set(state.messages.map(msg => msg.id));
-    localStorage.setItem('readMessageIds', JSON.stringify(Array.from(newReadIds)));
     return { readMessageIds: newReadIds };
   }),
 
   setShouldScrollToBottom: (should) => set({ shouldScrollToBottom: should }),
 
-  loadFromLocalStorage: () => {
+  loadFromDatabase: async () => {
     try {
-      // Load messages
-      const savedMessages = localStorage.getItem('chatMessages');
-      if (savedMessages) {
-        const parsed = JSON.parse(savedMessages);
-        const messagesWithDates = parsed.map((msg: any) => ({
-          ...msg,
+      // Load messages from database
+      if (!window.electron) return;
+
+      const dbMessages = await window.electron.database.getRecentMessages();
+
+      if (dbMessages && dbMessages.length > 0) {
+        // Convert database messages to ChatMessage format
+        const messages = dbMessages.map((msg: any) => ({
+          id: msg.id,
+          userId: msg.userId,
+          username: msg.username,
+          displayName: msg.displayName,
+          message: msg.message,
           timestamp: new Date(msg.timestamp),
+          color: msg.color,
           badges: msg.badges || [],
-          isMod: msg.isMod || false,
-          isSubscriber: msg.isSubscriber || false,
-          isVip: msg.isVip || false,
-          isBroadcaster: msg.isBroadcaster || false,
+          isMod: false, // These aren't stored in DB yet
+          isSubscriber: false,
+          isVip: false,
+          isBroadcaster: false,
           isFirstMessage: msg.isFirstMessage || false,
           isReturningChatter: msg.isReturningChatter || false,
           isHighlighted: msg.isHighlighted || false,
           isCheer: msg.isCheer || false,
+          bits: msg.bits,
           isReply: msg.isReply || false,
+          replyParentMessageId: msg.replyParentMessageId,
+          emoteOffsets: msg.emoteOffsets,
         }));
-        set({ messages: messagesWithDates, shouldScrollToBottom: true });
-      }
-
-      // Load read message IDs
-      const savedReadIds = localStorage.getItem('readMessageIds');
-      if (savedReadIds) {
-        const parsed = JSON.parse(savedReadIds);
-        set({ readMessageIds: new Set(parsed) });
+        
+        set({ messages, shouldScrollToBottom: true });
       }
     } catch (err) {
-      console.error('Failed to load saved data:', err);
-    }
-  },
-
-  saveToLocalStorage: () => {
-    const state = get();
-    if (state.messages.length > 0) {
-      const messagesToSave = state.messages.slice(-MAX_STORED_MESSAGES);
-      localStorage.setItem('chatMessages', JSON.stringify(messagesToSave));
-    }
-    if (state.readMessageIds.size > 0) {
-      localStorage.setItem('readMessageIds', JSON.stringify(Array.from(state.readMessageIds)));
+      console.error('Failed to load messages from database:', err);
     }
   },
 }));

@@ -239,6 +239,56 @@ class DatabaseService {
     stmt.run(...values);
   }
 
+  getRecentMessages(limit: number = 100): ChatMessage[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT 
+        m.id,
+        m.userId,
+        v.username,
+        v.displayName,
+        m.message,
+        m.timestamp,
+        m.color,
+        m.badges,
+        m.isFirstMessage,
+        m.isReturningChatter,
+        m.isHighlighted,
+        m.isCheer,
+        m.bits,
+        m.isReply,
+        m.replyParentMessageId,
+        m.emoteOffsets
+      FROM messages m
+      INNER JOIN viewers v ON m.userId = v.id
+      ORDER BY m.timestamp DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as any[];
+
+    // Reverse to get chronological order (oldest first)
+    return rows.reverse().map(row => ({
+      id: row.id,
+      userId: row.userId,
+      username: row.username,
+      displayName: row.displayName,
+      message: row.message,
+      timestamp: row.timestamp,
+      color: row.color || undefined,
+      badges: JSON.parse(row.badges || '[]'),
+      isFirstMessage: row.isFirstMessage === 1,
+      isReturningChatter: row.isReturningChatter === 1,
+      isHighlighted: row.isHighlighted === 1,
+      isCheer: row.isCheer === 1,
+      bits: row.bits || undefined,
+      isReply: row.isReply === 1,
+      replyParentMessageId: row.replyParentMessageId || undefined,
+      emoteOffsets: row.emoteOffsets || undefined,
+    }));
+  }
+
   close() {
     if (this.db) {
       this.db.close();

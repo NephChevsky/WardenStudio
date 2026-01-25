@@ -79,6 +79,10 @@ ipcMain.handle('db-update-message', (_event, oldId: string, updates: any) => {
   databaseService.updateMessage(oldId, updates)
 })
 
+ipcMain.handle('db-get-recent-messages', (_event, limit: number) => {
+  return databaseService.getRecentMessages(limit)
+})
+
 // The built directory structure
 //
 // ├─┬─┬ dist

@@ -1,8 +1,6 @@
 import { ChatClient } from '@twurple/chat';
 import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { ApiClient } from '@twurple/api';
-import { parseMessageWithEmotes } from '../utils/emoteParser';
-import type { MessagePart } from '../utils/emoteParser';
 import { setBadgeCache } from '../utils/badgeParser';
 
 export interface ChatMessage {
@@ -10,7 +8,6 @@ export interface ChatMessage {
   username: string;
   displayName: string;
   message: string;
-  messageParts: MessagePart[];
   timestamp: Date;
   color?: string;
   badges: string[];
@@ -27,6 +24,7 @@ export interface ChatMessage {
   replyParentMessageId?: string; // ID of message being replied to
   replyParentDisplayName?: string; // Display name of user being replied to
   replyParentMessage?: string; // Text of the message being replied to
+  emoteOffsets?: string; // Serialized emote offset data for parsing
   isRead?: boolean;
   isDeleted?: boolean; // Message has been deleted by user
 }
@@ -146,8 +144,6 @@ export class TwitchChatService {
           username: user,
           displayName: msg.userInfo.displayName,
           message: text,
-          // Use Twurple's emoteOffsets directly
-          messageParts: parseMessageWithEmotes(text, msg.emoteOffsets),
           timestamp: new Date(),
           color: msg.userInfo.color,
           badges: badges,
@@ -165,6 +161,13 @@ export class TwitchChatService {
           replyParentMessageId: msg.parentMessageId ?? undefined,
           replyParentDisplayName: msg.parentMessageUserDisplayName ?? undefined,
           replyParentMessage: msg.parentMessageText ?? undefined,
+          emoteOffsets: msg.emoteOffsets && msg.emoteOffsets.size > 0 ? (() => {
+            const emoteOffsetsObj: Record<string, string[]> = {};
+            msg.emoteOffsets.forEach((positions, id) => {
+              emoteOffsetsObj[id] = positions;
+            });
+            return JSON.stringify(emoteOffsetsObj);
+          })() : undefined,
         };
 
         // Save message to database
@@ -194,6 +197,7 @@ export class TwitchChatService {
                   bits: msg.bits,
                   isReply: msg.isReply ?? false,
                   replyParentMessageId: msg.parentMessageId ?? undefined,
+                  emoteOffsets: chatMessage.emoteOffsets,
                 });
                 shouldInsert = false;
               }
@@ -201,21 +205,10 @@ export class TwitchChatService {
             
             // Insert message if it's not a duplicate self-message
             if (shouldInsert) {
-              // Convert emoteOffsets Map to JSON string for storage
-              let emoteOffsetsJson = null;
-              if (msg.emoteOffsets && msg.emoteOffsets.size > 0) {
-                const emoteOffsetsObj: Record<string, string[]> = {};
-                msg.emoteOffsets.forEach((positions, id) => {
-                  emoteOffsetsObj[id] = positions;
-                });
-                emoteOffsetsJson = JSON.stringify(emoteOffsetsObj);
-              }
-
               await window.electron.database.insertMessage({
                 ...chatMessage,
                 userId: msg.userInfo.userId,
                 badges: badges,
-                emoteOffsets: emoteOffsetsJson
               });
             }
           } catch (err) {
@@ -256,7 +249,6 @@ export class TwitchChatService {
         username: this.currentUser.name,
         displayName: this.currentUser.displayName,
         message: message,
-        messageParts: parseMessageWithEmotes(message, new Map()),
         timestamp: new Date(),
         color: this.currentUser.color,
         badges: badges,

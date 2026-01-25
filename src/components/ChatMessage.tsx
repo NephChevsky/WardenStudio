@@ -1,5 +1,5 @@
 import './ChatMessage.css'
-import { getEmoteUrl } from '../utils/emoteParser'
+import { getEmoteUrl, parseMessageWithEmotes } from '../utils/emoteParser'
 import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
 
@@ -112,34 +112,47 @@ export function ChatMessage({
           </span>
           <span className="chat-colon" style={{ fontSize: `${fontSize}px` }}>:</span>
           <span className="chat-message" style={{ fontSize: `${fontSize}px` }}>
-            {msg.messageParts.map((part, index) => {
-              if (part.type === 'emote' && part.emoteId) {
-                return (
-                  <img
-                    key={index}
-                    src={getEmoteUrl(part.emoteId, '2.0')}
-                    alt={part.content}
-                    title={part.content}
-                    className="chat-emote"
-                  />
-                );
+            {(() => {
+              // Parse emoteOffsets from JSON string if available
+              let emoteOffsets: Map<string, string[]> | undefined;
+              if (msg.emoteOffsets) {
+                try {
+                  const emoteOffsetsObj = JSON.parse(msg.emoteOffsets);
+                  emoteOffsets = new Map(Object.entries(emoteOffsetsObj));
+                } catch (err) {
+                  console.error('Failed to parse emote offsets:', err);
+                }
               }
-              if (part.type === 'link' && part.url) {
-                return (
-                  <a
-                    key={index}
-                    href={part.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="chat-link"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {part.content}
-                  </a>
-                );
-              }
-              return <span key={index}>{part.content}</span>;
-            })}
+              
+              return parseMessageWithEmotes(msg.message, emoteOffsets).map((part, index) => {
+                if (part.type === 'emote' && part.emoteId) {
+                  return (
+                    <img
+                      key={index}
+                      src={getEmoteUrl(part.emoteId, '2.0')}
+                      alt={part.content}
+                      title={part.content}
+                      className="chat-emote"
+                    />
+                  );
+                }
+                if (part.type === 'link' && part.url) {
+                  return (
+                    <a
+                      key={index}
+                      href={part.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="chat-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {part.content}
+                    </a>
+                  );
+                }
+                return <span key={index}>{part.content}</span>;
+              });
+            })()}
           </span>
         </div>
       </div>

@@ -32,6 +32,7 @@ export interface Database {
   insertMessage(message: any): Promise<void>;
   findRecentSelfMessage(userId: string, messageText: string, withinMs: number): Promise<{ id: string } | null>;
   updateMessage(oldId: string, updates: any): Promise<void>;
+  getRecentMessages(limit: number = 100): Promise<any[]>;
 }
 
 export interface UpdateInfo {

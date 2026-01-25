@@ -37,7 +37,7 @@ function App() {
     markAllAsRead,
     deleteMessage,
     setShouldScrollToBottom,
-    loadFromLocalStorage,
+    loadFromDatabase,
     clearMessages,
   } = useChatStore();
 
@@ -80,8 +80,8 @@ function App() {
   )
 
   useEffect(() => {
-    // Load saved chat data
-    loadFromLocalStorage();
+    // Load saved chat data from database
+    loadFromDatabase();
     // Load user settings
     loadSettings();
 
@@ -131,7 +131,7 @@ function App() {
         window.ipcRenderer.off('oauth-callback', handleOAuthCallback);
       }
     };
-  }, [loadFromLocalStorage, setAuthenticated, setLoading, loadSettings])
+  }, [loadFromDatabase, setAuthenticated, setLoading, loadSettings])
 
   useLayoutEffect(() => {
     // Scroll to bottom when messages change (for new messages)
@@ -222,8 +222,6 @@ function App() {
     storeLogout()
     setConnected(false)
     clearMessages()
-    localStorage.removeItem('chatMessages')
-    localStorage.removeItem('readMessageIds')
   }
 
   const handleSendMessage = async (e: React.FormEvent) => {
