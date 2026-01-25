@@ -3,6 +3,7 @@ import './UserCard.css'
 import './ChatMessage.css'
 import { TwitchApiService } from '../services/TwitchApiService'
 import { useChatStore } from '../store/chatStore'
+import { useAuthStore } from '../store/authStore'
 import type { ChatMessage } from '../services/TwitchChatService'
 import { ChatMessage as ChatMessageComponent } from './ChatMessage'
 
@@ -51,6 +52,8 @@ export function UserCard({
     const [isAtBottom, setIsAtBottom] = useState(true)
     const cardRef = useRef<HTMLDivElement>(null)
     const messagesListRef = useRef<HTMLDivElement>(null)
+    const currentUserId = useAuthStore(state => state.currentUserId)
+    const broadcasterId = useAuthStore(state => state.broadcasterId)
 
     const constrainPosition = (x: number, y: number) => {
         const cardWidth = 350
@@ -393,7 +396,7 @@ export function UserCard({
                         </div>
                     </div>
 
-                    {!userInfo.isBroadcaster && (
+                    {!userInfo.isBroadcaster && userId !== currentUserId && (
                         <div className="user-card-actions">
                             <button className={`user-card-action-btn timeout${userInfo?.isTimedOut ? ' active' : ''}`} title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -407,17 +410,21 @@ export function UserCard({
                             </svg>
                         </button>
 
-                        <button className={`user-card-action-btn vip${userInfo?.isVip ? ' active' : ''}`} title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                            </svg>
-                        </button>
+                        {currentUserId === broadcasterId && (
+                            <button className={`user-card-action-btn vip${userInfo?.isVip ? ' active' : ''}`} title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                </svg>
+                            </button>
+                        )}
 
-                        <button className={`user-card-action-btn mod${userInfo?.isMod ? ' active' : ''}`} title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
-                            </svg>
-                        </button>
+                        {currentUserId === broadcasterId && (
+                            <button className={`user-card-action-btn mod${userInfo?.isMod ? ' active' : ''}`} title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                     )}
 

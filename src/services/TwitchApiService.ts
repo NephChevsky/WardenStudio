@@ -120,8 +120,8 @@ export class TwitchApiService {
     isSubscribed: boolean;
     subscriptionTier: string;
   }> {
-    const { broadcasterId } = useAuthStore.getState();
-    if (!this.apiClient || !broadcasterId) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || broadcasterId !== currentUserId) {
       return { isSubscribed: false, subscriptionTier: 'None' };
     }
 
@@ -150,8 +150,8 @@ export class TwitchApiService {
     isTimedOut: boolean;
     timeoutExpiresAt: Date | null;
   }> {
-    const { broadcasterId } = useAuthStore.getState();
-    if (!this.apiClient || !broadcasterId) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || broadcasterId !== currentUserId) {
       return { isBanned: false, isTimedOut: false, timeoutExpiresAt: null };
     }
 
@@ -183,8 +183,8 @@ export class TwitchApiService {
   }
 
   async getVips(): Promise<string[]> {
-    const { broadcasterId } = useAuthStore.getState();
-    if (!this.apiClient || !broadcasterId) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || broadcasterId !== currentUserId) {
       return [];
     }
 
@@ -198,8 +198,8 @@ export class TwitchApiService {
   }
 
   async getModerators(): Promise<string[]> {
-    const { broadcasterId } = useAuthStore.getState();
-    if (!this.apiClient || !broadcasterId) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || broadcasterId !== currentUserId) {
       return [];
     }
 

@@ -385,14 +385,14 @@ function App() {
 
   const handleDeleteMessage = async () => {
     if (contextMenu) {
-      // Call Twitch API to delete the message
       const success = await apiServiceRef.current.deleteMessage(contextMenu.messageId)
       
-      // Mark as deleted locally (strikethrough)
-      deleteMessage(contextMenu.messageId)
-      
-      if (!success) {
-        console.warn('Failed to delete message via Twitch API, but marked as deleted locally')
+      if (success)
+      {
+        deleteMessage(contextMenu.messageId);
+      }
+      else {
+        console.warn('Failed to delete message via API')
       }
       
       setContextMenu(null)
