@@ -99,14 +99,17 @@ export class TwitchApiService {
   }
 
   async getChatters(): Promise<string[]> {
-    const { broadcasterId } = useAuthStore.getState();
-    if (!this.apiClient || !broadcasterId) {
+    const { broadcasterId, currentUserId } = useAuthStore.getState();
+    if (!this.apiClient || !broadcasterId || !currentUserId) {
       return [];
     }
 
     try {
-      const chattersResponse = await this.apiClient.chat.getChatters(broadcasterId);
-      return chattersResponse.data.map(chatter => chatter.userDisplayName);
+      const chatters = await this.apiClient.asUser(currentUserId, async (ctx) => {
+        const chattersResponse = await ctx.chat.getChatters(broadcasterId);
+        return chattersResponse.data.map(chatter => chatter.userDisplayName);
+      });
+      return chatters;
     } catch (err) {
       console.error('Failed to fetch chatters:', err);
       return [];

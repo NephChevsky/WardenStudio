@@ -177,7 +177,7 @@ function App() {
 
     // Auto-connect using OAuth token to the authenticated user's channel
     (async () => {
-      const channel = authenticatedUser.name
+      const channel = import.meta.env.VITE_TWITCH_CHANNEL || authenticatedUser.name
       const accessToken = await oauthServiceRef.current.getToken()
       const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
 
