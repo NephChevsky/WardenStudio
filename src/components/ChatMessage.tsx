@@ -1,5 +1,6 @@
 import './ChatMessage.css'
 import { getEmoteUrl } from '../utils/emoteParser'
+import { getBadgeUrl, getBadgeTitle } from '../utils/badgeParser'
 import type { ChatMessage as ChatMessageType } from '../services/TwitchChatService'
 
 interface ChatMessageProps {
@@ -84,12 +85,12 @@ export function ChatMessage({
             {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
           <span className="chat-badges">
-            {msg.badges.map((badge, index) => (
+            {msg.badges.map((badgeKey, index) => (
               <img
                 key={index}
-                src={badge.imageUrl}
-                alt={badge.title}
-                title={badge.title}
+                src={getBadgeUrl(badgeKey)}
+                alt={getBadgeTitle(badgeKey)}
+                title={getBadgeTitle(badgeKey)}
                 className="chat-badge"
               />
             ))}

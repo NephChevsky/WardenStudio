@@ -34,7 +34,7 @@ export function ContextMenu({
 
   const message = messages.find(m => m.id === messageId)
   const isBroadcaster = message?.badges.some(badge => 
-    badge.title.toLowerCase().includes('broadcaster')
+    badge.toLowerCase().startsWith('broadcaster:')
   ) || false
 
   return (

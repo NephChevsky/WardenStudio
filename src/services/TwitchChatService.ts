@@ -3,13 +3,7 @@ import { StaticAuthProvider, getTokenInfo } from '@twurple/auth';
 import { ApiClient } from '@twurple/api';
 import { parseMessageWithEmotes } from '../utils/emoteParser';
 import type { MessagePart } from '../utils/emoteParser';
-
-export interface ChatBadge {
-  id: string;
-  version: string;
-  imageUrl: string;
-  title: string;
-}
+import { setBadgeCache } from '../utils/badgeParser';
 
 export interface ChatMessage {
   id: string;
@@ -19,7 +13,7 @@ export interface ChatMessage {
   messageParts: MessagePart[];
   timestamp: Date;
   color?: string;
-  badges: ChatBadge[];
+  badges: string[];
   isMod: boolean;
   isSubscriber: boolean;
   isVip: boolean;
@@ -45,7 +39,11 @@ export class TwitchChatService {
   private currentUser: { id: string; name: string; displayName: string; color?: string } | null = null;
   private badgeCache: Map<string, string> = new Map();
   private broadcasterId: string = '';
-  private userBadges: ChatBadge[] = [];
+  private userBadges: string[] = [];
+
+  getBadgeUrl(badgeKey: string): string | null {
+    return this.badgeCache.get(badgeKey) || null;
+  }
 
   async connect(channel: string, accessToken: string, clientId: string) {
     this.channel = channel;
@@ -102,6 +100,9 @@ export class TwitchChatService {
           }
         }
       }
+      
+      // Share badge cache with badge parser utility
+      setBadgeCache(this.badgeCache);
     } catch (err) {
       console.error('Failed to initialize chat service:', err);
       throw err;
@@ -116,19 +117,10 @@ export class TwitchChatService {
 
     this.chatClient.onMessage(async (_channel, user, text, msg) => {
       if (this.onMessageCallback) {
-        const badges: ChatBadge[] = [];
+        const badges: string[] = [];
         // Use Twurple's badge info from message
         msg.userInfo.badges.forEach((version, id) => {
-          const badgeKey = `${id}:${version}`;
-          const imageUrl = this.badgeCache.get(badgeKey);
-          if (imageUrl) {
-            badges.push({ 
-              id, 
-              version,
-              imageUrl,
-              title: id 
-            });
-          }
+          badges.push(`${id}:${version}`);
         });
         
         // Store user's own badges for use in sendMessage
@@ -193,7 +185,7 @@ export class TwitchChatService {
                 // Update the existing message with the real message ID and info
                 await window.electron.database.updateMessage(recentSelfMessage.id, {
                   id: msg.id,
-                  badges: badges.map(b => b.imageUrl),
+                  badges: badges,
                   timestamp: new Date(),
                   isFirstMessage: msg.isFirst ?? false,
                   isReturningChatter: msg.isReturningChatter ?? false,
@@ -222,7 +214,7 @@ export class TwitchChatService {
               await window.electron.database.insertMessage({
                 ...chatMessage,
                 userId: msg.userInfo.userId,
-                badges: badges.map(b => b.imageUrl),
+                badges: badges,
                 emoteOffsets: emoteOffsetsJson
               });
             }
@@ -249,21 +241,13 @@ export class TwitchChatService {
     
     if (this.onMessageCallback && this.currentUser) {
       
-      const badges: ChatBadge[] = [];
+      const badges: string[] = [];
       
       if (this.userBadges.length > 0) {
         badges.push(...this.userBadges);
       } else {
         if (this.currentUser.id === this.broadcasterId) {
-          const broadcasterBadge = this.badgeCache.get('broadcaster:1');
-          if (broadcasterBadge) {
-            badges.push({
-              id: 'broadcaster',
-              version: '1',
-              imageUrl: broadcasterBadge,
-              title: 'Broadcaster'
-            });
-          }
+          badges.push('broadcaster:1');
         }
       }
       
@@ -293,7 +277,7 @@ export class TwitchChatService {
           await window.electron.database.insertMessage({
             ...chatMessage,
             userId: this.currentUser.id,
-            badges: badges.map(b => b.imageUrl),
+            badges: badges,
             emoteOffsets: null // Self-sent messages don't have emotes initially
           });
         } catch (err) {
