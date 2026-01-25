@@ -11,10 +11,6 @@ export interface ChatMessage {
   timestamp: Date;
   color?: string;
   badges: string[];
-  isMod: boolean;
-  isSubscriber: boolean;
-  isVip: boolean;
-  isBroadcaster: boolean;
   isFirstMessage: boolean;
   isReturningChatter: boolean; // User returning after being away
   isHighlighted: boolean; // Message highlighted by sender (paid feature)
@@ -147,11 +143,6 @@ export class TwitchChatService {
           timestamp: new Date(),
           color: msg.userInfo.color,
           badges: badges,
-          // Use Twurple's user info flags
-          isMod: msg.userInfo.isMod,
-          isSubscriber: msg.userInfo.isSubscriber,
-          isVip: msg.userInfo.isVip,
-          isBroadcaster: msg.userInfo.isBroadcaster,
           isFirstMessage: msg.isFirst ?? false,
           isReturningChatter: msg.isReturningChatter ?? false,
           isHighlighted: msg.isHighlight ?? false,
@@ -252,10 +243,6 @@ export class TwitchChatService {
         timestamp: new Date(),
         color: this.currentUser.color,
         badges: badges,
-        isMod: false,
-        isSubscriber: false,
-        isVip: false,
-        isBroadcaster: this.currentUser.id === this.broadcasterId,
         isFirstMessage: false,
         isReturningChatter: false,
         isHighlighted: false,

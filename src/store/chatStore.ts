@@ -116,10 +116,6 @@ export const useChatStore = create<ChatStore>((set) => ({
           timestamp: new Date(msg.timestamp),
           color: msg.color,
           badges: msg.badges || [],
-          isMod: false, // These aren't stored in DB yet
-          isSubscriber: false,
-          isVip: false,
-          isBroadcaster: false,
           isFirstMessage: msg.isFirstMessage || false,
           isReturningChatter: msg.isReturningChatter || false,
           isHighlighted: msg.isHighlighted || false,
