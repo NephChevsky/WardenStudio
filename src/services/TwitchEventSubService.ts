@@ -12,18 +12,12 @@ export class TwitchEventSubService {
   private eventSubListener: EventSubWsListener | null = null;
   private onMessageDeletedCallback: ((event: MessageDeletedEvent) => void) | null = null;
 
-  /**
-   * Initialize EventSub listener and subscribe to message deletion events
-   */
-  async connect(apiClient: ApiClient, broadcasterId: string, userId: string) {
-    // Create EventSub WebSocket listener
+  connect(apiClient: ApiClient, broadcasterId: string, userId: string) {
     this.eventSubListener = new EventSubWsListener({ apiClient });
 
-    // Subscribe to chat message deletion events
-    // This event fires when a message is deleted by a moderator or the broadcaster
-    await this.eventSubListener.onChannelChatMessageDelete(
+    this.eventSubListener.onChannelChatMessageDelete(
       broadcasterId,
-      userId, // The authenticated user (must be a moderator or broadcaster)
+      userId,
       (event) => {
         if (this.onMessageDeletedCallback) {
           this.onMessageDeletedCallback({
@@ -36,24 +30,17 @@ export class TwitchEventSubService {
       }
     );
 
-    // Start the EventSub listener
-    await this.eventSubListener.start();
+    this.eventSubListener.start();
     console.log('EventSub listener started and subscribed to message deletion events');
   }
 
-  /**
-   * Register callback for when a message is deleted
-   */
   onMessageDeleted(callback: (event: MessageDeletedEvent) => void) {
     this.onMessageDeletedCallback = callback;
   }
 
-  /**
-   * Disconnect and cleanup EventSub listener
-   */
-  async disconnect() {
+  disconnect() {
     if (this.eventSubListener) {
-      await this.eventSubListener.stop();
+      this.eventSubListener.stop();
       this.eventSubListener = null;
     }
   }
