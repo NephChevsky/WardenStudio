@@ -182,49 +182,43 @@ function App() {
 
       if (channel && accessToken && clientId) {
         try {
-          // Initialize API service first
-          await apiService.initialize(channel, accessToken, clientId)
+          await apiService.initialize(accessToken, clientId);
 
-          loadFromDatabase();
+          await Promise.all([
+            apiService.fetchUserInfo(accessToken, clientId),
+            apiService.fetchBroadcasterInfo(channel),
+            apiService.fetchBadges()
+          ]);
 
-          // Get necessary data from API service
-          const currentUser = apiService.getCurrentUser()
-          const broadcasterId = apiService.getBroadcasterId()
+          const currentUser = apiService.getCurrentUser();
+          const broadcasterId = apiService.getBroadcasterId();
+          const apiClient = apiService.getApiClient();
 
-          if (!currentUser || !broadcasterId) {
-            throw new Error('Failed to get user or broadcaster info')
+          if (!currentUser || !broadcasterId || !apiClient) {
+            throw new Error('Failed to get user or broadcaster info');
           }
 
-          // Initialize chat service (user info now comes from authStore)
-          await chatService.connect(
-            channel,
-            accessToken,
-            clientId
-          )
-
-          setConnected(true)
-
-          // Initialize EventSub service independently
-          const apiClient = apiService.getApiClient()
-
-          if (apiClient) {
+          await Promise.all([
+            loadFromDatabase(),
+            chatService.connect(channel, accessToken, clientId),
             eventSubService.connect(apiClient, broadcasterId, currentUser.id)
+          ]);
 
-            // Register message deletion handler
-            eventSubService.onMessageDeleted(async (event) => {
-              console.log('Message deleted event received:', event.messageId);
-              deleteMessage(event.messageId);
-              
-              // Update database to mark message as deleted
-              if (window.electron?.database) {
-                try {
-                  await window.electron.database.markMessageAsDeleted(event.messageId);
-                } catch (err) {
-                  console.error('Failed to mark message as deleted in database:', err);
-                }
+          eventSubService.onMessageDeleted(async (event) => {
+            console.log('Message deleted event received:', event.messageId);
+            deleteMessage(event.messageId);
+            
+            if (window.electron?.database) {
+              try {
+                await window.electron.database.markMessageAsDeleted(event.messageId);
+              } catch (err) {
+                console.error('Failed to mark message as deleted in database:', err);
               }
-            });
-          }
+            }
+          });
+
+          setConnected(true);
+          
         } catch (err) {
           console.error('Failed to connect:', err)
           setError('Failed to connect to Twitch chat. Try logging in again.')
@@ -242,7 +236,6 @@ function App() {
     }
   }, [isAuthenticated, authenticatedUser, addMessage, deleteMessage, setConnected, setError, setAuthenticated])
 
-  // Fetch chatters list every minute
   useEffect(() => {
     if (!isConnected) return
 
@@ -251,10 +244,8 @@ function App() {
       setChatters(chattersData)
     }
 
-    // Fetch immediately
     fetchChatters()
 
-    // Set up interval to fetch every minute
     const intervalId = setInterval(fetchChatters, 60000)
 
     return () => {

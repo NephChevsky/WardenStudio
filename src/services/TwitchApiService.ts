@@ -7,9 +7,15 @@ export class TwitchApiService {
   private apiClient: ApiClient | null = null;
   private badgeCache: Map<string, string> = new Map();
 
-  async initialize(channel: string, accessToken: string, clientId: string) {
+  async initialize(accessToken: string, clientId: string) {
     const authProvider = new StaticAuthProvider(clientId, accessToken);
     this.apiClient = new ApiClient({ authProvider });
+  }
+
+  async fetchUserInfo(accessToken: string, clientId: string) {
+    if (!this.apiClient) {
+      throw new Error('API client not initialized');
+    }
 
     try {
       // Use Twurple's getTokenInfo to get user ID from token
@@ -36,14 +42,36 @@ export class TwitchApiService {
         authenticatedUser.displayName,
         userChatColor ?? undefined
       );
+    } catch (err) {
+      console.error('Failed to fetch user info:', err);
+      throw err;
+    }
+  }
 
+  async fetchBroadcasterInfo(channel: string) {
+    if (!this.apiClient) {
+      throw new Error('API client not initialized');
+    }
+
+    try {
       // Get broadcaster info using Twurple API
       const broadcaster = await this.apiClient.users.getUserByName(channel);
       if (broadcaster) {
         // Store broadcaster ID in authStore
         useAuthStore.getState().setBroadcasterId(broadcaster.id);
       }
+    } catch (err) {
+      console.error('Failed to fetch broadcaster info:', err);
+      throw err;
+    }
+  }
 
+  async fetchBadges() {
+    if (!this.apiClient) {
+      throw new Error('API client not initialized');
+    }
+
+    try {
       // Fetch global badges using Twurple API
       const globalBadges = await this.apiClient.chat.getGlobalBadges();
       for (const badgeSet of globalBadges) {
@@ -66,7 +94,7 @@ export class TwitchApiService {
       // Share badge cache with badge parser utility
       setBadgeCache(this.badgeCache);
     } catch (err) {
-      console.error('Failed to initialize API service:', err);
+      console.error('Failed to fetch badges:', err);
       throw err;
     }
   }
