@@ -26,8 +26,6 @@ export class TwitchChatService {
   private onMessageCallback: ((message: ChatMessage) => void) | null = null;
   private channel: string = '';
   private userBadges: string[] = [];
-  private recentMessageCache = new Map<string, number>(); // messageText -> timestamp
-  private readonly CACHE_DURATION = 5000; // 5 seconds
 
   async connect(
     channel: string, 
@@ -105,25 +103,15 @@ export class TwitchChatService {
             
             // Check if this is a message sent by the current user
             if (msg.userInfo.userId === currentUserId) {
-              // Use cache to check if we sent this message recently
-              const cacheKey = `${msg.userInfo.userId}:${text}`;
-              const cachedTime = this.recentMessageCache.get(cacheKey);
-              const now = Date.now();
+              // Look for a recent self-sent message that matches
+              const recentSelfMessage = await window.electron.database.findRecentSelfMessage(
+                msg.userInfo.userId,
+                broadcasterId || '',
+                text,
+                2000 // within 2 seconds
+              );
               
-              // Only query database if we have a recent cache hit
-              if (cachedTime && (now - cachedTime) < this.CACHE_DURATION) {
-                // Look for a recent self-sent message that matches
-                const recentSelfMessage = await window.electron.database.findRecentSelfMessage(
-                  msg.userInfo.userId,
-                  broadcasterId || '',
-                  text,
-                  2000 // within 2 seconds
-                );
-                
-                // Clear from cache
-                this.recentMessageCache.delete(cacheKey);
-              
-                if (recentSelfMessage) {
+              if (recentSelfMessage) {
                 // Update the existing message with the real message ID and info
                 await window.electron.database.updateMessage(recentSelfMessage.id, {
                   id: msg.id,
@@ -137,7 +125,6 @@ export class TwitchChatService {
                   emoteOffsets: chatMessage.emoteOffsets,
                 });
                 shouldInsert = false;
-                }
               }
             }
             
@@ -201,17 +188,6 @@ export class TwitchChatService {
         isReturningChatter: false,
         isHighlighted: false,
       };
-      
-      // Add to cache for deduplication
-      const cacheKey = `${currentUserId}:${message}`;
-      this.recentMessageCache.set(cacheKey, Date.now());
-      
-      // Clean old cache entries
-      for (const [key, timestamp] of this.recentMessageCache.entries()) {
-        if (Date.now() - timestamp > this.CACHE_DURATION) {
-          this.recentMessageCache.delete(key);
-        }
-      }
 
       // Save message to database
       if (window.electron?.database && currentUserId) {

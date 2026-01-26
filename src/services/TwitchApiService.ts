@@ -19,26 +19,17 @@ export class TwitchApiService {
         throw new Error('Failed to get user ID from token');
       }
 
-      // Parallelize user info and broadcaster info fetching
-      const [authenticatedUser, broadcaster] = await Promise.all([
-        this.apiClient.users.getUserById(tokenInfo.userId),
-        this.apiClient.users.getUserByName(channel)
-      ]);
+      // Get authenticated user info using Twurple API
+      const authenticatedUser = await this.apiClient.users.getUserById(tokenInfo.userId);
 
       if (!authenticatedUser) {
         throw new Error('Failed to get user information');
       }
 
-      // Fetch user color in parallel with storing broadcaster
-      const userColorPromise = this.apiClient.chat.getColorForUser(authenticatedUser.id);
+      // Get user's chat color using Twurple API
+      const userChatColor = await this.apiClient.chat.getColorForUser(authenticatedUser.id);
 
-      // Store broadcaster ID immediately
-      if (broadcaster) {
-        useAuthStore.getState().setBroadcasterId(broadcaster.id);
-      }
-
-      // Wait for color and store user
-      const userChatColor = await userColorPromise;
+      // Store current user in authStore
       useAuthStore.getState().setCurrentUser(
         authenticatedUser.id,
         authenticatedUser.name,
@@ -46,9 +37,34 @@ export class TwitchApiService {
         userChatColor ?? undefined
       );
 
-      // Fetch badges in the background (non-blocking)
-      // This doesn't need to block the connection
-      this.fetchBadgesAsync(broadcaster?.id);
+      // Get broadcaster info using Twurple API
+      const broadcaster = await this.apiClient.users.getUserByName(channel);
+      if (broadcaster) {
+        // Store broadcaster ID in authStore
+        useAuthStore.getState().setBroadcasterId(broadcaster.id);
+      }
+
+      // Fetch global badges using Twurple API
+      const globalBadges = await this.apiClient.chat.getGlobalBadges();
+      for (const badgeSet of globalBadges) {
+        for (const version of badgeSet.versions) {
+          this.badgeCache.set(`${badgeSet.id}:${version.id}`, version.getImageUrl(1));
+        }
+      }
+
+      // Fetch channel badges using Twurple API
+      const { broadcasterId } = useAuthStore.getState();
+      if (broadcasterId) {
+        const channelBadges = await this.apiClient.chat.getChannelBadges(broadcasterId);
+        for (const badgeSet of channelBadges) {
+          for (const version of badgeSet.versions) {
+            this.badgeCache.set(`${badgeSet.id}:${version.id}`, version.getImageUrl(1));
+          }
+        }
+      }
+
+      // Share badge cache with badge parser utility
+      setBadgeCache(this.badgeCache);
     } catch (err) {
       console.error('Failed to initialize API service:', err);
       throw err;
@@ -82,55 +98,9 @@ export class TwitchApiService {
     return this.badgeCache.get(badgeKey) || null;
   }
 
-  private async fetchBadgesAsync(broadcasterId?: string) {
-    try {
-      if (!this.apiClient) return;
-
-      // Fetch global and channel badges in parallel
-      const promises = [
-        this.apiClient.chat.getGlobalBadges()
-      ];
-
-      if (broadcasterId) {
-        promises.push(this.apiClient.chat.getChannelBadges(broadcasterId));
-      }
-
-      const results = await Promise.all(promises);
-      const [globalBadges, channelBadges] = results;
-
-      // Process global badges
-      for (const badgeSet of globalBadges) {
-        for (const version of badgeSet.versions) {
-          this.badgeCache.set(`${badgeSet.id}:${version.id}`, version.getImageUrl(1));
-        }
-      }
-
-      // Process channel badges if available
-      if (channelBadges) {
-        for (const badgeSet of channelBadges) {
-          for (const version of badgeSet.versions) {
-            this.badgeCache.set(`${badgeSet.id}:${version.id}`, version.getImageUrl(1));
-          }
-        }
-      }
-
-      // Share badge cache with badge parser utility
-      setBadgeCache(this.badgeCache);
-    } catch (err) {
-      console.error('Failed to fetch badges:', err);
-      // Don't throw - badges are not critical for chat functionality
-    }
-  }
-
   async getChatters(): Promise<string[]> {
     const { broadcasterId, currentUserId } = useAuthStore.getState();
     if (!this.apiClient || !broadcasterId || !currentUserId) {
-      return [];
-    }
-
-    // Only fetch chatters if user is the broadcaster (owns the channel)
-    // The getChatters API requires moderator permissions
-    if (broadcasterId !== currentUserId) {
       return [];
     }
 

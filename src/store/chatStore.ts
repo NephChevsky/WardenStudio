@@ -107,8 +107,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState());
       if (!broadcasterId) return;
 
-      // Load fewer messages initially for faster startup (50 instead of 100)
-      const dbMessages = await window.electron.database.getRecentMessages(broadcasterId, 50);
+      const dbMessages = await window.electron.database.getRecentMessages(broadcasterId);
 
       if (dbMessages && dbMessages.length > 0) {
         // Convert database messages to ChatMessage format
