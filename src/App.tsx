@@ -208,7 +208,7 @@ function App() {
           const apiClient = apiService.getApiClient()
 
           if (apiClient) {
-            await eventSubService.connect(apiClient, broadcasterId, currentUser.id)
+            eventSubService.connect(apiClient, broadcasterId, currentUser.id)
 
             // Register message deletion handler
             eventSubService.onMessageDeleted(async (event) => {
