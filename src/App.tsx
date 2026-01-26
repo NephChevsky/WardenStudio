@@ -134,7 +134,7 @@ function App() {
         cleanup();
       }
     };
-  }, [loadFromDatabase, setAuthenticated, setLoading, loadSettings])
+  }, [setAuthenticated, setLoading, loadSettings])
 
   useLayoutEffect(() => {
     // Scroll to bottom when messages change (for new messages)
