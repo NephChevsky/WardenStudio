@@ -10,42 +10,50 @@ interface SettingsProps {
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const {
-    fontSize,
+    uiFontSize,
+    chatFontSize,
     readMessageColor,
-    setFontSize,
+    setUiFontSize,
+    setChatFontSize,
     setReadMessageColor,
     saveSettings,
   } = useSettingsStore()
 
-  const [tempFontSize, setTempFontSize] = useState(fontSize)
+  const [tempUiFontSize, setTempUiFontSize] = useState(uiFontSize)
+  const [tempChatFontSize, setTempChatFontSize] = useState(chatFontSize)
   const [tempReadMessageColor, setTempReadMessageColor] = useState(readMessageColor)
-  const [originalFontSize, setOriginalFontSize] = useState(fontSize)
+  const [originalUiFontSize, setOriginalUiFontSize] = useState(uiFontSize)
+  const [originalChatFontSize, setOriginalChatFontSize] = useState(chatFontSize)
   const [originalReadMessageColor, setOriginalReadMessageColor] = useState(readMessageColor)
   const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize temp values when opening
   useEffect(() => {
     if (isOpen && !isInitialized) {
-      setOriginalFontSize(fontSize)
+      setOriginalUiFontSize(uiFontSize)
+      setOriginalChatFontSize(chatFontSize)
       setOriginalReadMessageColor(readMessageColor)
-      setTempFontSize(fontSize)
+      setTempUiFontSize(uiFontSize)
+      setTempChatFontSize(chatFontSize)
       setTempReadMessageColor(readMessageColor)
       setIsInitialized(true)
     } else if (!isOpen && isInitialized) {
       setIsInitialized(false)
     }
-  }, [isOpen, fontSize, readMessageColor, isInitialized])
+  }, [isOpen, uiFontSize, chatFontSize, readMessageColor, isInitialized])
 
   // Close settings without saving (restore original values)
   const handleClose = () => {
-    setFontSize(originalFontSize)
+    setUiFontSize(originalUiFontSize)
+    setChatFontSize(originalChatFontSize)
     setReadMessageColor(originalReadMessageColor)
     onClose()
   }
 
   // Save settings and close panel
   const handleSave = () => {
-    setFontSize(tempFontSize)
+    setUiFontSize(tempUiFontSize)
+    setChatFontSize(tempChatFontSize)
     setReadMessageColor(tempReadMessageColor)
     saveSettings()
     onClose()
@@ -53,20 +61,28 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
 
   // Restore default settings
   const handleRestoreDefaults = () => {
-    const defaultFontSize = 13
+    const defaultUiFontSize = 13
+    const defaultChatFontSize = 13
     const defaultReadMessageColor = '#333333'
-    setTempFontSize(defaultFontSize)
+    setTempUiFontSize(defaultUiFontSize)
+    setTempChatFontSize(defaultChatFontSize)
     setTempReadMessageColor(defaultReadMessageColor)
-    setFontSize(defaultFontSize)
+    setUiFontSize(defaultUiFontSize)
+    setChatFontSize(defaultChatFontSize)
     setReadMessageColor(defaultReadMessageColor)
     saveSettings()
     onClose()
   }
 
   // Update settings immediately for preview
-  const handleFontSizeChange = (size: number) => {
-    setTempFontSize(size)
-    setFontSize(size)
+  const handleUiFontSizeChange = (size: number) => {
+    setTempUiFontSize(size)
+    setUiFontSize(size)
+  }
+
+  const handleChatFontSizeChange = (size: number) => {
+    setTempChatFontSize(size)
+    setChatFontSize(size)
   }
 
   const handleColorChange = (color: string) => {
@@ -90,24 +106,46 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
         </div>
         <div className="settings-content">
           <div className="setting-group">
-            <label htmlFor="font-size" className="setting-label">
-              Font Size
+            <label htmlFor="ui-font-size" className="setting-label">
+              UI Font Size
             </label>
             <div className="setting-control">
               <input 
                 type="range" 
-                id="font-size" 
+                id="ui-font-size" 
                 min="10" 
                 max="20" 
                 step="1" 
-                value={tempFontSize} 
-                onChange={(e) => handleFontSizeChange(Number(e.target.value))} 
+                value={tempUiFontSize} 
+                onChange={(e) => handleUiFontSizeChange(Number(e.target.value))} 
                 className="setting-slider" 
               />
-              <span className="setting-value">{tempFontSize}px</span>
+              <span className="setting-value">{tempUiFontSize}px</span>
             </div>
             <p className="setting-description">
-              Adjust the font size of all text in the UI
+              Adjust the font size of UI elements (settings, buttons, etc.)
+            </p>
+          </div>
+
+          <div className="setting-group">
+            <label htmlFor="chat-font-size" className="setting-label">
+              Chat Message Font Size
+            </label>
+            <div className="setting-control">
+              <input 
+                type="range" 
+                id="chat-font-size" 
+                min="10" 
+                max="20" 
+                step="1" 
+                value={tempChatFontSize} 
+                onChange={(e) => handleChatFontSizeChange(Number(e.target.value))} 
+                className="setting-slider" 
+              />
+              <span className="setting-value">{tempChatFontSize}px</span>
+            </div>
+            <p className="setting-description">
+              Adjust the font size of chat messages
             </p>
           </div>
 

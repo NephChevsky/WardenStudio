@@ -105,7 +105,7 @@ body {
 }
 
 .stream-chat-label {
-  font-size: calc(var(--base-font-size, 13px) * 0.92);
+  font-size: calc(var(--ui-font-size, 13px) * 0.92);
   font-weight: 600;
   color: #adadb8;
   letter-spacing: 0.05em;
@@ -113,7 +113,7 @@ body {
 }
 
 .channel-name {
-  font-size: calc(var(--base-font-size, 13px) * 1.07);
+  font-size: calc(var(--ui-font-size, 13px) * 1.07);
   font-weight: 600;
   color: #efeff1;
   line-height: 1;
@@ -153,7 +153,7 @@ body {
 
 .logout-button {
   padding: 0.4rem 0.8rem;
-  font-size: calc(var(--base-font-size, 13px) * 0.92);
+  font-size: calc(var(--ui-font-size, 13px) * 0.92);
   background: transparent;
   color: #efeff1;
   border: 1px solid #53535f;
@@ -208,7 +208,7 @@ body {
   cursor: pointer;
   transition: background 0.1s;
   color: #efeff1;
-  font-size: calc(var(--base-font-size, 13px) * 1.07);
+  font-size: calc(var(--ui-font-size, 13px) * 1.07);
 }
 
 .autocomplete-item:hover {
@@ -232,7 +232,7 @@ body {
   color: #efeff1;
   border: none;
   border-radius: 4px;
-  font-size: calc(var(--base-font-size, 13px) * 0.92);
+  font-size: calc(var(--ui-font-size, 13px) * 0.92);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.1s;
@@ -261,7 +261,7 @@ body {
   border: 2px solid #18181b;
   border-radius: 4px;
   color: #efeff1;
-  font-size: calc(var(--base-font-size, 13px) * 1.07);
+  font-size: calc(var(--ui-font-size, 13px) * 1.07);
   outline: none;
   transition: border-color 0.1s;
 }
@@ -282,7 +282,7 @@ body {
   border: none;
   border-radius: 4px;
   font-weight: 600;
-  font-size: var(--base-font-size, 13px);
+  font-size: var(--ui-font-size, 13px);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -301,5 +301,5 @@ body {
   background: #3a1d1d;
   border-bottom: 1px solid #5c2626;
   color: #f87171;
-  font-size: calc(var(--base-font-size, 13px) * 1.07);
+  font-size: calc(var(--ui-font-size, 13px) * 1.07);
 }

@@ -36,9 +36,16 @@ export class TwitchEventSubService {
       }
     );
 
-    // Start the EventSub listener
-    await this.eventSubListener.start();
-    console.log('EventSub listener started and subscribed to message deletion events');
+    // Start the EventSub listener (non-blocking)
+    // This runs in the background and doesn't need to block chat connection
+    const startPromise = this.eventSubListener.start();
+    if (startPromise) {
+      startPromise.then(() => {
+        console.log('EventSub listener started and subscribed to message deletion events');
+      }).catch(err => {
+        console.error('Failed to start EventSub listener:', err);
+      });
+    }
   }
 
   /**

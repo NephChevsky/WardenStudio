@@ -44,7 +44,8 @@ function App() {
   } = useChatStore();
 
   const {
-    fontSize,
+    uiFontSize,
+    chatFontSize,
     readMessageColor,
     loadSettings,
   } = useSettingsStore();
@@ -483,7 +484,7 @@ function App() {
   }
 
   return (
-    <div className="chat-container" style={{ '--base-font-size': `${fontSize}px` } as React.CSSProperties}>
+    <div className="chat-container" style={{ '--ui-font-size': `${uiFontSize}px`, '--chat-font-size': `${chatFontSize}px` } as React.CSSProperties}>
       <UpdateNotification />
       <div className="chat-header">
         <div className="channel-info">

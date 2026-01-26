@@ -55,7 +55,7 @@ export function UserCard({
     const messagesListRef = useRef<HTMLDivElement>(null)
     const currentUserId = useAuthStore(state => state.currentUserId)
     const broadcasterId = useAuthStore(state => state.broadcasterId)
-    const fontSize = useSettingsStore(state => state.fontSize)
+    const uiFontSize = useSettingsStore(state => state.uiFontSize)
 
     const constrainPosition = (x: number, y: number) => {
         const cardWidth = 350
@@ -353,7 +353,7 @@ export function UserCard({
                 left: `${position.x}px`,
                 top: `${position.y}px`,
                 cursor: isDragging ? 'grabbing' : 'default',
-                '--base-font-size': `${fontSize}px`
+                '--ui-font-size': `${uiFontSize}px`
             } as React.CSSProperties}>
             <div className="user-card-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab' }}>
                 <h3>{userInfo?.displayName || username}</h3>

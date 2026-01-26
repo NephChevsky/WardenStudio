@@ -1,6 +1,6 @@
 /* Chat Message Styles */
 .chat-line {
-  padding: calc(var(--base-font-size, 13px) * 0.15) 1rem;
+  padding: calc(var(--chat-font-size, 13px) * 0.15) 1rem;
   word-wrap: break-word;
   transition: background 0.2s;
   position: relative;
@@ -14,9 +14,9 @@
 
 .chat-line-content {
   display: block;
-  line-height: calc(var(--base-font-size, 13px) * 1.85);
-  padding-left: calc(var(--base-font-size, 13px) * 2.5);
-  text-indent: calc(var(--base-font-size, 13px) * -2.5);
+  line-height: calc(var(--chat-font-size, 13px) * 1.85);
+  padding-left: calc(var(--chat-font-size, 13px) * 2.5);
+  text-indent: calc(var(--chat-font-size, 13px) * -2.5);
 }
 
 .chat-line.first-time-chatter {
@@ -32,10 +32,10 @@
 .first-time-badge {
   display: flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.375);
   border-radius: 3px;
-  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  font-size: calc(var(--chat-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
@@ -43,8 +43,8 @@
 }
 
 .first-time-badge svg {
-  width: calc(var(--base-font-size, 13px) * 1.08);
-  height: calc(var(--base-font-size, 13px) * 1.08);
+  width: calc(var(--chat-font-size, 13px) * 1.08);
+  height: calc(var(--chat-font-size, 13px) * 1.08);
 }
 
 /* Returning Chatter */
@@ -61,9 +61,9 @@
 .returning-chatter-badge {
   display: flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
-  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.375);
+  font-size: calc(var(--chat-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
@@ -71,8 +71,8 @@
 }
 
 .returning-chatter-badge svg {
-  width: calc(var(--base-font-size, 13px) * 1.08);
-  height: calc(var(--base-font-size, 13px) * 1.08);
+  width: calc(var(--chat-font-size, 13px) * 1.08);
+  height: calc(var(--chat-font-size, 13px) * 1.08);
 }
 
 /* Highlighted Message */
@@ -89,9 +89,9 @@
 .highlighted-indicator {
   display: flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.1);
-  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.1);
+  font-size: calc(var(--chat-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
@@ -99,8 +99,8 @@
 }
 
 .highlighted-indicator svg {
-  width: calc(var(--base-font-size, 13px) * 1.08);
-  height: calc(var(--base-font-size, 13px) * 1.08);
+  width: calc(var(--chat-font-size, 13px) * 1.08);
+  height: calc(var(--chat-font-size, 13px) * 1.08);
 }
 
 /* Cheer Message */
@@ -117,9 +117,9 @@
 .cheer-indicator {
   display: flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.1);
-  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.1);
+  font-size: calc(var(--chat-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
@@ -127,17 +127,17 @@
 }
 
 .cheer-indicator svg {
-  width: calc(var(--base-font-size, 13px) * 1.08);
-  height: calc(var(--base-font-size, 13px) * 1.08);
+  width: calc(var(--chat-font-size, 13px) * 1.08);
+  height: calc(var(--chat-font-size, 13px) * 1.08);
 }
 
 /* Reply Thread */
 .reply-thread {
   display: flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
-  font-size: calc(var(--base-font-size, 13px) * 0.85);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.375);
+  font-size: calc(var(--chat-font-size, 13px) * 0.85);
   font-weight: 600;
   color: #ffffff;
   width: fit-content;
@@ -146,8 +146,8 @@
 
 .reply-thread svg {
   flex-shrink: 0;
-  width: calc(var(--base-font-size, 13px) * 0.92);
-  height: calc(var(--base-font-size, 13px) * 0.92);
+  width: calc(var(--chat-font-size, 13px) * 0.92);
+  height: calc(var(--chat-font-size, 13px) * 0.92);
 }
 
 .reply-text {
@@ -160,20 +160,20 @@
 .cheer-amount {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.25);
-  padding: calc(var(--base-font-size, 13px) * 0.125) calc(var(--base-font-size, 13px) * 0.375);
+  gap: calc(var(--chat-font-size, 13px) * 0.25);
+  padding: calc(var(--chat-font-size, 13px) * 0.125) calc(var(--chat-font-size, 13px) * 0.375);
   background: linear-gradient(135deg, #9147ff 0%, #772ce8 100%);
   border-radius: 3px;
-  font-size: calc(var(--base-font-size, 13px) * 0.92);
+  font-size: calc(var(--chat-font-size, 13px) * 0.92);
   font-weight: 700;
   color: #ffffff;
-  margin-right: calc(var(--base-font-size, 13px) * 0.46);
+  margin-right: calc(var(--chat-font-size, 13px) * 0.46);
   vertical-align: middle;
 }
 
 .cheer-amount svg {
-  width: calc(var(--base-font-size, 13px) * 1.08);
-  height: calc(var(--base-font-size, 13px) * 1.08);
+  width: calc(var(--chat-font-size, 13px) * 1.08);
+  height: calc(var(--chat-font-size, 13px) * 1.08);
 }
 
 .chat-line:hover {
@@ -185,30 +185,30 @@
 }
 
 .chat-timestamp {
-  font-size: var(--base-font-size, 13px);
+  font-size: var(--chat-font-size, 13px);
   color: #53535f;
-  margin-right: calc(var(--base-font-size, 13px) * 0.62);
+  margin-right: calc(var(--chat-font-size, 13px) * 0.62);
   display: inline;
 }
 
 .chat-badges {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--base-font-size, 13px) * 0.31);
-  margin-right: calc(var(--base-font-size, 13px) * 0.31);
+  gap: calc(var(--chat-font-size, 13px) * 0.31);
+  margin-right: calc(var(--chat-font-size, 13px) * 0.31);
   vertical-align: middle;
 }
 
 .chat-badge {
-  height: calc(var(--base-font-size, 13px) * 1.38);
-  width: calc(var(--base-font-size, 13px) * 1.38);
+  height: calc(var(--chat-font-size, 13px) * 1.38);
+  width: calc(var(--chat-font-size, 13px) * 1.38);
   display: inline-block;
   vertical-align: middle;
 }
 
 .chat-username {
   font-weight: 700;
-  font-size: var(--base-font-size, 13px);
+  font-size: var(--chat-font-size, 13px);
   cursor: pointer;
   display: inline;
 }
@@ -219,14 +219,14 @@
 
 .chat-colon {
   color: #efeff1;
-  margin: 0 calc(var(--base-font-size, 13px) * 0.31);
+  margin: 0 calc(var(--chat-font-size, 13px) * 0.31);
   display: inline;
-  font-size: var(--base-font-size, 13px);
+  font-size: var(--chat-font-size, 13px);
 }
 
 .chat-message {
   color: #efeff1;
-  font-size: var(--base-font-size, 13px);
+  font-size: var(--chat-font-size, 13px);
   display: inline;
   word-break: break-word;
 }
@@ -234,8 +234,8 @@
 .chat-emote {
   vertical-align: middle;
   display: inline-block;
-  height: calc(var(--base-font-size, 13px) * 2.15);
-  margin: calc(var(--base-font-size, 13px) * -0.15) calc(var(--base-font-size, 13px) * 0.15);
+  height: calc(var(--chat-font-size, 13px) * 2.15);
+  margin: calc(var(--chat-font-size, 13px) * -0.15) calc(var(--chat-font-size, 13px) * 0.15);
 }
 
 .chat-link {
