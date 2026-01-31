@@ -40,6 +40,8 @@ export interface Database {
   getMessagesByUserId(userId: string, channelId: string, limit?: number): Promise<any[]>;
   getMessageCountByUserId(userId: string, channelId: string): Promise<number>;
   markMessageAsDeleted(messageId: string): Promise<void>;
+  insertSubscription(subscription: any): Promise<void>;
+  getRecentSubscriptions(channelId: string, limit?: number): Promise<any[]>;
 }
 
 export interface UpdateInfo {

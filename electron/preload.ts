@@ -65,6 +65,12 @@ contextBridge.exposeInMainWorld('electron', {
     markMessageAsDeleted(messageId: string) {
       return ipcRenderer.invoke('db-mark-message-deleted', messageId)
     },
+    insertSubscription(subscription: any) {
+      return ipcRenderer.invoke('db-insert-subscription', subscription)
+    },
+    getRecentSubscriptions(channelId: string, limit?: number) {
+      return ipcRenderer.invoke('db-get-recent-subscriptions', channelId, limit)
+    },
   },
   // Auto-updater API
   updater: {

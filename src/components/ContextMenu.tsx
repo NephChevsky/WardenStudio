@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import './ContextMenu.css'
-import type { ChatMessage } from '../services/TwitchChatService'
+import type { ChatItem } from '../store/chatStore'
+import { isChatMessage } from '../store/chatStore'
 
 interface ContextMenuProps {
   x: number
@@ -8,7 +9,7 @@ interface ContextMenuProps {
   messageId: string
   username: string
   userId: string
-  messages: ChatMessage[]
+  messages: ChatItem[]
   onDeleteMessage: () => void
   onTimeoutUser: () => void
   onBanUser: () => void
@@ -33,9 +34,11 @@ export function ContextMenu({
   }, [onClose])
 
   const message = messages.find(m => m.id === messageId)
-  const isBroadcaster = message?.badges.some(badge => 
-    badge.toLowerCase().startsWith('broadcaster:')
-  ) || false
+  const isBroadcaster = (message && isChatMessage(message)) 
+    ? message.badges.some((badge: string) => 
+        badge.toLowerCase().startsWith('broadcaster:')
+      )
+    : false
 
   return (
     <div

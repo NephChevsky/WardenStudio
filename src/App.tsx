@@ -5,12 +5,13 @@ import { TwitchChatService } from './services/TwitchChatService'
 import { TwitchEventSubService } from './services/TwitchEventSubService'
 import { TwitchOAuthService } from './services/TwitchOAuthService'
 import { useAuthStore } from './store/authStore'
-import { useChatStore } from './store/chatStore'
+import { useChatStore, isChatMessage, isSubscriptionEvent } from './store/chatStore'
 import { useSettingsStore } from './store/settingsStore'
 import { UpdateNotification } from './components/UpdateNotification'
 import { Settings } from './components/Settings'
 import { ContextMenu } from './components/ContextMenu'
 import { ChatMessage } from './components/ChatMessage'
+import { SubscriptionEvent } from './components/SubscriptionEvent'
 import { UserCard } from './components/UserCard'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
     lastReadMessageId,
     shouldScrollToBottom,
     addMessage,
+    addSubscription,
     setMessageInput,
     setConnected,
     markAsRead,
@@ -98,6 +100,9 @@ function App() {
           setAuthenticated(null);
           setLoading(false);
         }
+      } else {
+        // No token found
+        setLoading(false);
       }
     };
     
@@ -176,32 +181,29 @@ function App() {
 
     // Auto-connect using OAuth token to the authenticated user's channel
     (async () => {
-      const channel = import.meta.env.VITE_TWITCH_CHANNEL || authenticatedUser.name
       const accessToken = await oauthServiceRef.current.getToken()
       const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID
 
-      if (channel && accessToken && clientId) {
+      if (authenticatedUser.name && accessToken && clientId) {
         try {
           await apiService.initialize(accessToken, clientId);
 
           await Promise.all([
             apiService.fetchUserInfo(accessToken, clientId),
-            apiService.fetchBroadcasterInfo(channel),
             apiService.fetchBadges()
           ]);
 
           const currentUser = apiService.getCurrentUser();
-          const broadcasterId = apiService.getBroadcasterId();
           const apiClient = apiService.getApiClient();
 
-          if (!currentUser || !broadcasterId || !apiClient) {
+          if (!currentUser || !apiClient) {
             throw new Error('Failed to get user or broadcaster info');
           }
 
           await Promise.all([
             loadFromDatabase(),
-            chatService.connect(channel, accessToken, clientId),
-            eventSubService.connect(apiClient, broadcasterId, currentUser.id)
+            chatService.connect(authenticatedUser.name, accessToken, clientId),
+            eventSubService.connect(apiClient, currentUser.id, currentUser.id)
           ]);
 
           eventSubService.onMessageDeleted(async (event) => {
@@ -213,6 +215,19 @@ function App() {
                 await window.electron.database.markMessageAsDeleted(event.messageId);
               } catch (err) {
                 console.error('Failed to mark message as deleted in database:', err);
+              }
+            }
+          });
+
+          eventSubService.onSubscription(async (event) => {
+            console.log('Subscription event received:', event);
+            addSubscription(event);
+            
+            if (window.electron?.database) {
+              try {
+                await window.electron.database.insertSubscription(event);
+              } catch (err) {
+                console.error('Failed to save subscription event to database:', err);
               }
             }
           });
@@ -234,7 +249,7 @@ function App() {
       eventSubService.disconnect()
       chatService.disconnect()
     }
-  }, [isAuthenticated, authenticatedUser, addMessage, deleteMessage, setConnected, setError, setAuthenticated])
+  }, [isAuthenticated, authenticatedUser, addMessage, addSubscription, deleteMessage, setConnected, setError, setAuthenticated, loadFromDatabase])
 
   useEffect(() => {
     if (!isConnected) return
@@ -287,9 +302,11 @@ function App() {
   const getUniqueUsernames = (): string[] => {
     const usernamesSet = new Set<string>()
     
-    // Add usernames from messages
-    messages.forEach(msg => {
-      usernamesSet.add(msg.displayName)
+    // Add usernames from messages (only ChatMessage types have displayName)
+    messages.forEach(item => {
+      if (isChatMessage(item)) {
+        usernamesSet.add(item.displayName)
+      }
     })
     
     // Add chatters from API
@@ -361,14 +378,14 @@ function App() {
   const handleContextMenu = (e: React.MouseEvent, messageId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    const message = messages.find(m => m.id === messageId)
-    if (message) {
+    const item = messages.find(m => m.id === messageId)
+    if (item && isChatMessage(item)) {
       setContextMenu({ 
         x: e.clientX, 
         y: e.clientY, 
         messageId,
-        username: message.username,
-        userId: message.userId
+        username: item.username,
+        userId: item.userId
       })
     }
   }
@@ -498,25 +515,36 @@ function App() {
 
       <div className="chat-messages" ref={chatMessagesRef}>
         <div className="messages-list">
-          {messages.map((msg, index) => {
+          {messages.map((item, index) => {
             // Message is read if it's at or before the last read message
             const lastReadIndex = lastReadMessageId 
               ? messages.findIndex(m => m.id === lastReadMessageId)
               : -1;
             const isRead = lastReadIndex >= 0 && index <= lastReadIndex;
             
-            return (
-              <ChatMessage
-                key={msg.id}
-                message={msg}
-                isRead={isRead}
-                readMessageBackgroundColor={getReadMessageColorWithAlpha()}
-                onMarkAsRead={markAsRead}
-                onContextMenu={handleContextMenu}
-                isContextMenuOpen={contextMenu !== null}
-                onUsernameClick={handleUsernameClick}
-              />
-            );
+            // Render different components based on type
+            if (isChatMessage(item)) {
+              return (
+                <ChatMessage
+                  key={item.id}
+                  message={item}
+                  isRead={isRead}
+                  readMessageBackgroundColor={getReadMessageColorWithAlpha()}
+                  onMarkAsRead={markAsRead}
+                  onContextMenu={handleContextMenu}
+                  isContextMenuOpen={contextMenu !== null}
+                  onUsernameClick={handleUsernameClick}
+                />
+              );
+            } else if (isSubscriptionEvent(item)) {
+              return (
+                <SubscriptionEvent
+                  key={item.id}
+                  event={item}
+                />
+              );
+            }
+            return null;
           })}
           <div ref={messagesEndRef} />
         </div>

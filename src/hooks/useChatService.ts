@@ -42,14 +42,13 @@ export function useChatService({
     const connect = async () => {
       try {
         // Initialize API service first
-        await apiService.initialize(channel, accessToken, clientId);
+        await apiService.initialize(accessToken, clientId);
 
         // Get necessary data from API service
         const currentUser = apiService.getCurrentUser();
-        const broadcasterId = apiService.getBroadcasterId();
 
-        if (!currentUser || !broadcasterId) {
-          throw new Error('Failed to get user or broadcaster info');
+        if (!currentUser) {
+          throw new Error('Failed to get user info');
         }
 
         // Initialize chat service (user info now comes from authStore)
@@ -62,7 +61,7 @@ export function useChatService({
         // Initialize EventSub service
         const apiClient = apiService.getApiClient();
         if (apiClient) {
-          await eventSubService.connect(apiClient, broadcasterId, currentUser.id);
+          await eventSubService.connect(apiClient, currentUser.id, currentUser.id);
 
           // Register message deletion handler if provided
           if (onMessageDeleted) {

@@ -26,6 +26,22 @@ export interface DbChatMessage {
   isDeleted?: boolean;
 }
 
+export interface DbSubscriptionEvent {
+  id: string;
+  type: string;
+  userId: string;
+  channelId: string;
+  timestamp: string;
+  tier: string;
+  message?: string;
+  cumulativeMonths?: number;
+  streakMonths?: number;
+  durationMonths?: number;
+  isGift?: boolean;
+  gifterUserId?: string;
+  amount?: number;
+}
+
 class DatabaseService {
   private db: Database.Database | null = null;
 
@@ -99,6 +115,37 @@ class DatabaseService {
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_messages_channelId 
       ON messages(channelId)
+    `);
+
+    // Create subscriptions table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        userId TEXT NOT NULL,
+        channelId TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        message TEXT,
+        cumulativeMonths INTEGER,
+        streakMonths INTEGER,
+        durationMonths INTEGER,
+        isGift INTEGER NOT NULL DEFAULT 0,
+        gifterUserId TEXT,
+        amount INTEGER
+      )
+    `);
+
+    // Create index on timestamp for faster chronological queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_timestamp 
+      ON subscriptions(timestamp)
+    `);
+
+    // Create index on channelId for faster channel-specific queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_channelId 
+      ON subscriptions(channelId)
     `);
   }
 
@@ -359,6 +406,67 @@ class DatabaseService {
 
     const stmt = this.db.prepare('UPDATE messages SET isDeleted = 1 WHERE id = ?');
     stmt.run(messageId);
+  }
+
+  insertSubscription(subscription: any): void {
+    if (!this.db) return;
+
+    const stmt = this.db.prepare(`
+      INSERT INTO subscriptions (
+        id, type, userId, channelId, timestamp, tier,
+        message, cumulativeMonths, streakMonths, durationMonths,
+        isGift, gifterUserId, amount
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO NOTHING
+    `);
+
+    stmt.run(
+      subscription.id,
+      subscription.type,
+      subscription.userId,
+      subscription.channelId,
+      subscription.timestamp instanceof Date ? subscription.timestamp.toISOString() : subscription.timestamp,
+      subscription.tier,
+      subscription.message || null,
+      subscription.cumulativeMonths || null,
+      subscription.streakMonths || null,
+      subscription.durationMonths || null,
+      subscription.isGift ? 1 : 0,
+      subscription.gifterUserId || null,
+      subscription.amount || null
+    );
+  }
+
+  getRecentSubscriptions(channelId: string, limit: number = 100): DbSubscriptionEvent[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT *
+      FROM subscriptions
+      WHERE channelId = ?
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(channelId, limit) as any[];
+
+    // Reverse to get chronological order (oldest first)
+    return rows.reverse().map(row => ({
+      id: row.id,
+      type: row.type,
+      userId: row.userId,
+      channelId: row.channelId,
+      timestamp: row.timestamp,
+      tier: row.tier,
+      message: row.message || undefined,
+      cumulativeMonths: row.cumulativeMonths || undefined,
+      streakMonths: row.streakMonths || undefined,
+      durationMonths: row.durationMonths || undefined,
+      isGift: row.isGift === 1,
+      gifterUserId: row.gifterUserId || undefined,
+      amount: row.amount || undefined,
+    }));
   }
 
   close() {

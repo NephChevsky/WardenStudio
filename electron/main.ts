@@ -102,6 +102,14 @@ ipcMain.handle('db-mark-message-deleted', (_event, messageId: string) => {
   databaseService.markMessageAsDeleted(messageId)
 })
 
+ipcMain.handle('db-insert-subscription', (_event, subscription: any) => {
+  databaseService.insertSubscription(subscription)
+})
+
+ipcMain.handle('db-get-recent-subscriptions', (_event, channelId: string, limit: number = 100) => {
+  return databaseService.getRecentSubscriptions(channelId, limit)
+})
+
 // The built directory structure
 //
 // ├─┬─┬ dist

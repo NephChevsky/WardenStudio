@@ -1,15 +1,29 @@
 import { create } from 'zustand';
 import type { ChatMessage } from '../services/TwitchChatService';
+import type { SubscriptionEvent } from '../services/TwitchEventSubService';
+
+export type ChatItem = ChatMessage | SubscriptionEvent;
+
+// Type guard to check if item is a ChatMessage
+export function isChatMessage(item: ChatItem): item is ChatMessage {
+  return 'message' in item && 'displayName' in item;
+}
+
+// Type guard to check if item is a SubscriptionEvent
+export function isSubscriptionEvent(item: ChatItem): item is SubscriptionEvent {
+  return 'type' in item && ('sub' === item.type || 'resub' === item.type || 'gift' === item.type || 'community-gift' === item.type);
+}
 
 interface ChatStore {
-  messages: ChatMessage[];
+  messages: ChatItem[];
   messageInput: string;
   isConnected: boolean;
   lastReadMessageId: string | null;
   shouldScrollToBottom: boolean;
 
   addMessage: (message: ChatMessage) => void;
-  setMessages: (messages: ChatMessage[]) => void;
+  addSubscription: (subscription: SubscriptionEvent) => void;
+  setMessages: (messages: ChatItem[]) => void;
   clearMessages: () => void;
   deleteMessage: (messageId: string) => void;
   setMessageInput: (input: string) => void;
@@ -39,6 +53,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (!isSelfMessage) {
       // Look for a recent self- message from same user with same content
       const selfMessageIndex = state.messages.findIndex(m => 
+        isChatMessage(m) &&
         m.id.startsWith('self-') &&
         m.username === message.username &&
         m.message === message.message &&
@@ -59,6 +74,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     return { messages: newMessages };
   }),
 
+  addSubscription: (subscription) => set((state) => {
+    // Check for exact ID duplicate
+    const exactDuplicate = state.messages.find(m => m.id === subscription.id);
+    if (exactDuplicate) return state;
+
+    const newMessages = [...state.messages, subscription];
+    return { messages: newMessages };
+  }),
+
   setMessages: (messages) => set({ messages }),
 
   clearMessages: () => set({ 
@@ -67,9 +91,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   }),
 
   deleteMessage: (messageId) => set((state) => {
-    const newMessages = state.messages.map(msg => 
-      msg.id === messageId ? { ...msg, isDeleted: true } : msg
-    );
+    const newMessages = state.messages.map(item => {
+      if (isChatMessage(item) && item.id === messageId) {
+        return { ...item, isDeleted: true };
+      }
+      return item;
+    });
 
     return { messages: newMessages };
   }),
@@ -104,13 +131,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       // Load messages from database
       if (!window.electron) return;
 
-      const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState());
-      if (!broadcasterId) return;
+      const { currentUserId } = await import('../store/authStore').then(m => m.useAuthStore.getState());
+      if (!currentUserId) return;
 
-      const dbMessages = await window.electron.database.getRecentMessages(broadcasterId);
+      const [dbMessages, dbSubscriptions] = await Promise.all([
+        window.electron.database.getRecentMessages(currentUserId),
+        window.electron.database.getRecentSubscriptions(currentUserId)
+      ]);
 
+      const items: ChatItem[] = [];
+
+      // Convert database messages to ChatMessage format
       if (dbMessages && dbMessages.length > 0) {
-        // Convert database messages to ChatMessage format
         const messages = dbMessages.map((msg: any) => ({
           id: msg.id,
           userId: msg.userId,
@@ -128,9 +160,33 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           emoteOffsets: msg.emoteOffsets,
           isDeleted: msg.isDeleted || false,
         }));
-        
-        set({ messages, shouldScrollToBottom: true });
+        items.push(...messages);
       }
+
+      // Convert database subscriptions to SubscriptionEvent format
+      if (dbSubscriptions && dbSubscriptions.length > 0) {
+        const subscriptions = dbSubscriptions.map((sub: any) => ({
+          id: sub.id,
+          type: sub.type,
+          userId: sub.userId,
+          channelId: sub.channelId,
+          timestamp: new Date(sub.timestamp),
+          tier: sub.tier,
+          message: sub.message,
+          cumulativeMonths: sub.cumulativeMonths,
+          streakMonths: sub.streakMonths,
+          durationMonths: sub.durationMonths,
+          isGift: sub.isGift,
+          gifterUserId: sub.gifterUserId,
+          amount: sub.amount,
+        }));
+        items.push(...subscriptions);
+      }
+
+      // Sort by timestamp
+      items.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      
+      set({ messages: items, shouldScrollToBottom: true });
 
       // Load read message IDs from localStorage
       const savedLastReadId = localStorage.getItem('lastReadMessageId');
@@ -143,6 +199,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   getMessageById: (messageId) => {
-    return get().messages.find(msg => msg.id === messageId);
+    const item = get().messages.find(item => item.id === messageId);
+    if (item && isChatMessage(item)) {
+      return item;
+    }
+    return undefined;
   },
 }));
