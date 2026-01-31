@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './UserCard.css'
 import './ChatMessage.css'
 import { TwitchApiService } from '../services/TwitchApiService'
-import { useChatStore } from '../store/chatStore'
+import { useChatStore, isChatMessage } from '../store/chatStore'
 import { useAuthStore } from '../store/authStore'
 import { useSettingsStore } from '../store/settingsStore'
 import type { ChatMessage } from '../services/TwitchChatService'
@@ -35,7 +35,6 @@ export function UserCard({
         followingSince: Date | null
         isVip: boolean
         isMod: boolean
-        isBroadcaster: boolean
         isBanned: boolean
         isTimedOut: boolean
         timeoutExpiresAt: Date | null
@@ -54,7 +53,6 @@ export function UserCard({
     const cardRef = useRef<HTMLDivElement>(null)
     const messagesListRef = useRef<HTMLDivElement>(null)
     const currentUserId = useAuthStore(state => state.currentUserId)
-    const broadcasterId = useAuthStore(state => state.broadcasterId)
     const uiFontSize = useSettingsStore(state => state.uiFontSize)
 
     const constrainPosition = (x: number, y: number) => {
@@ -129,7 +127,6 @@ export function UserCard({
                     followingSince: info.followingSince,
                     isVip: vipIds.includes(userId),
                     isMod: modIds.includes(userId),
-                    isBroadcaster: info.isBroadcaster,
                     isBanned: banInfo.isBanned,
                     isTimedOut: banInfo.isTimedOut,
                     timeoutExpiresAt: banInfo.timeoutExpiresAt
@@ -146,11 +143,10 @@ export function UserCard({
         const loadMessageCount = async () => {
             if (!window.electron) return
 
-            const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState())
-            if (!broadcasterId) return
+            if (!currentUserId) return
 
             try {
-                const count = await window.electron.database.getMessageCountByUserId(userId, broadcasterId)
+                const count = await window.electron.database.getMessageCountByUserId(userId, currentUserId)
                 setMessageCount(count)
             } catch (err) {
                 console.error('Failed to load message count from database:', err)
@@ -163,6 +159,7 @@ export function UserCard({
         const unsubscribe = useChatStore.subscribe((state, prevState) => {
             // Check if a new message was added for this user
             const newMessages = state.messages.filter(msg => 
+                isChatMessage(msg) &&
                 msg.userId === userId && 
                 !msg.isDeleted &&
                 !prevState.messages.find(m => m.id === msg.id)
@@ -182,12 +179,11 @@ export function UserCard({
             const loadMessages = async () => {
                 if (!window.electron) return
 
-                const { broadcasterId } = await import('../store/authStore').then(m => m.useAuthStore.getState())
-                if (!broadcasterId) return
+                if (!currentUserId) return
 
                 try {
                     // Get messages from database
-                    const dbMessages = await window.electron.database.getMessagesByUserId(userId, broadcasterId, 100)
+                    const dbMessages = await window.electron.database.getMessagesByUserId(userId, currentUserId, 100)
 
                     if (dbMessages && dbMessages.length > 0) {
                         // Convert database messages to ChatMessage format
@@ -220,7 +216,9 @@ export function UserCard({
 
             // Subscribe to chat store for new messages
             const unsubscribe = useChatStore.subscribe((state) => {
-                const newMessages = state.messages.filter(msg => msg.userId === userId && !msg.isDeleted)
+                const newMessages = state.messages.filter((msg): msg is ChatMessage => 
+                    isChatMessage(msg) && msg.userId === userId && !msg.isDeleted
+                )
                 // Keep last 100 messages
                 setUserMessages(prev => {
                     const combined = [...prev, ...newMessages.filter(nm => !prev.find(pm => pm.id === nm.id))]
@@ -405,7 +403,7 @@ export function UserCard({
                         </div>
                     </div>
 
-                    {!userInfo.isBroadcaster && userId !== currentUserId && (
+                    {userId !== currentUserId && (
                         <div className="user-card-actions">
                             <button className={`user-card-action-btn timeout${userInfo?.isTimedOut ? ' active' : ''}`} title={userInfo?.isTimedOut ? "Remove Timeout" : "Timeout User"} onClick={handleTimeout}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -419,21 +417,17 @@ export function UserCard({
                             </svg>
                         </button>
 
-                        {currentUserId === broadcasterId && (
-                            <button className={`user-card-action-btn vip${userInfo?.isVip ? ' active' : ''}`} title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                </svg>
-                            </button>
-                        )}
+                        <button className={`user-card-action-btn vip${userInfo?.isVip ? ' active' : ''}`} title={userInfo?.isVip ? "Remove VIP" : "VIP User"} onClick={handleVip}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                        </button>
 
-                        {currentUserId === broadcasterId && (
-                            <button className={`user-card-action-btn mod${userInfo?.isMod ? ' active' : ''}`} title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
-                                </svg>
-                            </button>
-                        )}
+                        <button className={`user-card-action-btn mod${userInfo?.isMod ? ' active' : ''}`} title={userInfo?.isMod ? "Remove Mod" : "Mod User"} onClick={handleMod}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                            </svg>
+                        </button>
                     </div>
                     )}
 

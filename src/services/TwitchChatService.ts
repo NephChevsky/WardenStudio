@@ -98,7 +98,7 @@ export class TwitchChatService {
         // Save message to database
         if (window.electron?.database && msg.userInfo.userId) {
           try {
-            const { currentUserId, broadcasterId } = useAuthStore.getState();
+            const { currentUserId } = useAuthStore.getState();
             let shouldInsert = true;
             
             // Check if this is a message sent by the current user
@@ -106,7 +106,7 @@ export class TwitchChatService {
               // Look for a recent self-sent message that matches
               const recentSelfMessage = await window.electron.database.findRecentSelfMessage(
                 msg.userInfo.userId,
-                broadcasterId || '',
+                currentUserId || '',
                 text,
                 2000 // within 2 seconds
               );
@@ -130,11 +130,10 @@ export class TwitchChatService {
             
             // Insert message if it's not a duplicate self-message
             if (shouldInsert) {
-              const { broadcasterId } = useAuthStore.getState();
               await window.electron.database.insertMessage({
                 ...chatMessage,
                 userId: msg.userInfo.userId,
-                channelId: broadcasterId || '',
+                channelId: currentUserId || '',
                 badges: badges,
               });
             }
@@ -157,7 +156,7 @@ export class TwitchChatService {
   async sendMessage(message: string): Promise<void> {
     if (!this.chatClient || !this.channel) return;
     
-    const { currentUserId, currentUserName, currentUserDisplayName, currentUserColor, broadcasterId } = useAuthStore.getState();
+    const { currentUserId, currentUserName, currentUserDisplayName, currentUserColor } = useAuthStore.getState();
     
     if (!currentUserId) return;
     
@@ -170,9 +169,7 @@ export class TwitchChatService {
       if (this.userBadges.length > 0) {
         badges.push(...this.userBadges);
       } else {
-        if (currentUserId === broadcasterId) {
-          badges.push('broadcaster:1');
-        }
+        badges.push('broadcaster:1');
       }
       
       const chatMessage: ChatMessage = {
@@ -195,7 +192,7 @@ export class TwitchChatService {
           await window.electron.database.insertMessage({
             ...chatMessage,
             userId: currentUserId,
-            channelId: broadcasterId || '',
+            channelId: currentUserId || '',
             badges: badges,
             emoteOffsets: null // Self-sent messages don't have emotes initially
           });

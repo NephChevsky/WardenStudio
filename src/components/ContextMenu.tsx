@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import './ContextMenu.css'
 import type { ChatItem } from '../store/chatStore'
 import { isChatMessage } from '../store/chatStore'
+import { useAuthStore } from '../store/authStore'
 
 interface ContextMenuProps {
   x: number
@@ -26,6 +27,8 @@ export function ContextMenu({
   onBanUser,
   onClose
 }: ContextMenuProps) {
+  const currentUserId = useAuthStore(state => state.currentUserId)
+  
   // Close context menu on click outside
   useEffect(() => {
     const handleClick = () => onClose()
@@ -34,10 +37,8 @@ export function ContextMenu({
   }, [onClose])
 
   const message = messages.find(m => m.id === messageId)
-  const isBroadcaster = (message && isChatMessage(message)) 
-    ? message.badges.some((badge: string) => 
-        badge.toLowerCase().startsWith('broadcaster:')
-      )
+  const isBroadcasterMessage = (message && isChatMessage(message)) 
+    ? message.userId === currentUserId
     : false
 
   return (
@@ -53,7 +54,7 @@ export function ContextMenu({
       <button className="context-menu-item" onClick={onDeleteMessage}>
         Delete Message
       </button>
-      {!isBroadcaster && (
+      {!isBroadcasterMessage && (
         <>
           <button className="context-menu-item" onClick={onTimeoutUser}>
             Timeout

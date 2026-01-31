@@ -29,12 +29,12 @@ export class TwitchEventSubService {
   private onMessageDeletedCallback: ((event: MessageDeletedEvent) => void) | null = null;
   private onSubscriptionCallback: ((event: SubscriptionEvent) => void) | null = null;
 
-  connect(apiClient: ApiClient, broadcasterId: string, userId: string) {
+  connect(apiClient: ApiClient, userId: string) {
     this.eventSubListener = new EventSubWsListener({ apiClient });
 
     // Subscribe to message deletion events
     this.eventSubListener.onChannelChatMessageDelete(
-      broadcasterId,
+      userId,
       userId,
       (event) => {
         if (this.onMessageDeletedCallback) {
@@ -50,7 +50,7 @@ export class TwitchEventSubService {
 
     // Subscribe to new subscription events
     this.eventSubListener.onChannelSubscription(
-      broadcasterId,
+      userId,
       (event) => {
         if (this.onSubscriptionCallback) {
           this.onSubscriptionCallback({
@@ -68,7 +68,7 @@ export class TwitchEventSubService {
 
     // Subscribe to resubscription events (with message)
     this.eventSubListener.onChannelSubscriptionMessage(
-      broadcasterId,
+      userId,
       (event) => {
         if (this.onSubscriptionCallback) {
           this.onSubscriptionCallback({
@@ -89,7 +89,7 @@ export class TwitchEventSubService {
 
     // Subscribe to gift subscription events
     this.eventSubListener.onChannelSubscriptionGift(
-      broadcasterId,
+      userId,
       (event) => {
         if (this.onSubscriptionCallback) {
           // Check if it's a community gift (multiple subs) or single gift

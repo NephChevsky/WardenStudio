@@ -197,7 +197,7 @@ function App() {
           const apiClient = apiService.getApiClient();
 
           if (!currentUser || !apiClient) {
-            throw new Error('Failed to get user or broadcaster info');
+            throw new Error('Failed to get user info');
           }
 
           await Promise.all([

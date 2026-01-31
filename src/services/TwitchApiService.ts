@@ -224,7 +224,6 @@ export class TwitchApiService {
     profileImageUrl: string
     createdAt: Date
     followingSince: Date | null
-    isBroadcaster: boolean
   } | null> {
     const { currentUserId } = useAuthStore.getState();
     if (!this.apiClient || !currentUserId) {
@@ -254,8 +253,7 @@ export class TwitchApiService {
         displayName: user.displayName,
         profileImageUrl: user.profilePictureUrl,
         createdAt: user.creationDate,
-        followingSince,
-        isBroadcaster: user.id === currentUserId,
+        followingSince
       };
     } catch (err) {
       console.error('Failed to fetch user info:', err);
