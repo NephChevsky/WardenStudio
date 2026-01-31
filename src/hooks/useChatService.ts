@@ -61,7 +61,7 @@ export function useChatService({
         // Initialize EventSub service
         const apiClient = apiService.getApiClient();
         if (apiClient) {
-          await eventSubService.connect(apiClient, currentUser.id, currentUser.id);
+          eventSubService.connect(apiClient, currentUser.id);
 
           // Register message deletion handler if provided
           if (onMessageDeleted) {

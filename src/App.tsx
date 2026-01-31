@@ -203,7 +203,7 @@ function App() {
           await Promise.all([
             loadFromDatabase(),
             chatService.connect(authenticatedUser.name, accessToken, clientId),
-            eventSubService.connect(apiClient, currentUser.id, currentUser.id)
+            eventSubService.connect(apiClient, currentUser.id)
           ]);
 
           eventSubService.onMessageDeleted(async (event) => {
